@@ -25,7 +25,7 @@ Panel {
 
     contentHeight: {
         var h = 0;
-        if (poiBlock.height > 0) h += poiBlock.height + styler.themePaddingLarge;
+        if (poiBlock.height > 0) h += poiFlickable.height + poiFlickable.anchors.topMargin;
         if (infoText) h += infoBg.height;
         else if (h > 0) h += styler.themePaddingLarge;
         return h;
@@ -38,18 +38,40 @@ Panel {
 
     signal poiHidden(string poiId);
 
-    PoiBlock {
-        id: poiBlock
+    Flickable {
+        id: poiFlickable
         anchors.top: parent.top
         anchors.topMargin: styler.themePaddingLarge
+        boundsBehavior: Flickable.StopAtBounds
+        clip: true
+        contentHeight: poiBlock.height
+        contentWidth: width
+        height: Math.min(contentHeight,
+                         map.height - anchors.topMargin -
+                         (infoText ? infoBg.height : styler.themePaddingLarge))
+        width: panel.width
+        PoiBlock {
+            id: poiBlock
+            anchors.top: parent.top
+        }
     }
 
-    Item {
+    Rectangle {
         id: infoBg
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        color: infoBgMouse.pressed ? styler.blockPressed : "transparent"
         height: infoText ? Math.max(backButton.height, infoLabel.height, menuButton.height) + 2*styler.themePaddingLarge : 0
+
+        MouseArea {
+            id: infoBgMouse
+            anchors.fill: parent
+            onClicked: {
+                app.showMenu();
+                _hide();
+            }
+        }
 
         IconButtonPL {
             id: backButton
@@ -73,37 +95,22 @@ Panel {
             anchors.right: menuButton.left
             anchors.rightMargin: styler.themePaddingLarge
             anchors.verticalCenter: infoBg.verticalCenter
-            color: styler.themePrimaryColor
+            color: infoBgMouse.pressed ? styler.themeHighlightColor : styler.themePrimaryColor
             font.pixelSize: styler.themeFontSizeLarge
             height: text ? implicitHeight: 0
             truncMode: truncModes.fade
             verticalAlignment: Text.AlignTop
         }
 
-        IconButtonPL {
+        IconPL {
             id: menuButton
             anchors.right: parent.right
             anchors.rightMargin: styler.themeHorizontalPageMargin
             anchors.verticalCenter: infoBg.verticalCenter
+            height: iconHeight
             iconHeight: styler.themeIconSizeMedium
             iconName: showMenu ? styler.iconMenu : ""
-            padding: 0
             visible: showMenu
-            onClicked: {
-                app.showMenu();
-                _hide();
-            }
-        }
-    }
-
-    onClicked: {
-        if (!infoText) return;
-        if (mouse.y >= infoBg.y && mouse.y <= infoBg.y + infoBg.height
-                && mouse.x >= infoBg.x + infoLabel.x
-                && mouse.x <= infoBg.x + infoLabel.x + infoLabel.width) {
-            // consider as a click on menu button
-            app.showMenu();
-            _hide();
         }
     }
 

@@ -17,6 +17,7 @@
  */
 
 import QtQuick 2.0
+import org.puremaps 1.0
 import "."
 import "platform"
 
@@ -28,11 +29,11 @@ PageEmptyPL {
     AttributionButton { id: attributionButton }
     BasemapButton { id: basemapButton }
     CenterButton { id: centerButton }
-    Commander { id: commander }
+    Compass { id: compass }
     GeocodeButton { id: geocodeButton }
     Map {
         id: map
-        accessToken: py.call_sync("poor.key.get_mapbox_key", [])
+        accessToken: py.evaluate("poor.key.mapbox_key")
     }
     MenuButton { id: menuButton }
     Meters { id: meters }
@@ -43,6 +44,7 @@ PageEmptyPL {
     NavigationOverviewBlock { id: navigationOverview }
     NavigationSign { id: navigationSign }
     NavigationSpeedBlock { id: navigationSpeed }
+    Navigator { id: navigator }
     NorthArrow { id: northArrow }
     Notification { id: notification }
     InfoPanel { id: infoPanel }
@@ -122,16 +124,20 @@ PageEmptyPL {
     Component.onCompleted: {
         app.infoPanel = infoPanel;
         app.map = map;
+        app.navigator = navigator;
         app.notification = notification;
         app.pois = pois;
         app.remorse = remorse;
         // connect modal dialog properties
         app.modalDialogBasemap = Qt.binding(function () { return basemapButton.openMenu; });
-        // after all objects are initialized
-        commander.parseCommandLine();
     }
 
     onPageStatusActive: {
         if (!app.infoActive) app.stateId = "";
+        // finish initialization after the root page is shown
+        if (!app.initialized) {
+            app.initialize();
+            if (app.fontKeyMissing) app.showMenu();
+        }
     }
 }

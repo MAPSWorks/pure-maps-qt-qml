@@ -17,7 +17,7 @@
  */
 
 import QtQuick 2.0
-import QtPositioning 5.3
+import QtPositioning 5.4
 import "."
 import "platform"
 
@@ -181,10 +181,13 @@ PagePL {
             icon: styler.iconNavigateTo
             label: app.tr("Navigate To")
             onClicked: {
-                app.showMenu(Qt.resolvedUrl("RoutePage.qml"), {
-                                 "to": [poi.coordinate.longitude, poi.coordinate.latitude],
-                                 "toText": poi.title,
-                             });
+                navigator.clearRoute();
+                navigator.findRoute([{"text": poi.title,
+                                     "x": poi.coordinate.longitude, "y": poi.coordinate.latitude,
+                                     "destination": true} ],
+                                    {"save": true, "fitToView": true} );
+                app.showMap();
+                pois.hide();
             }
         }
 
@@ -193,6 +196,7 @@ PagePL {
             icon: styler.iconNavigateFrom
             label: app.tr("Navigate From")
             onClicked: {
+                navigator.clearRoute();
                 app.showMenu(Qt.resolvedUrl("RoutePage.qml"), {
                                  "from": [poi.coordinate.longitude, poi.coordinate.latitude],
                                  "fromText": poi.title,
@@ -234,6 +238,14 @@ PagePL {
             onClicked: Qt.openUrlExternally(poi.link)
         }
 
+        IconListItem {
+            height: styler.themeItemSizeSmall
+            icon: poi.email ? styler.iconEmail : ""
+            label: poi.email
+            visible: poi.email
+            onClicked: Qt.openUrlExternally("mailto:" + poi.email)
+        }
+
         Spacer {
             height: styler.themePaddingMedium
         }
@@ -271,8 +283,8 @@ PagePL {
 
     function setPoi(p) {
         page.poi = p;
-        page.bookmarked = p.bookmarked;
-        page.shortlisted = p.shortlisted;
+        page.bookmarked = Boolean(p.bookmarked);
+        page.shortlisted = Boolean(p.shortlisted);
     }
 
 }

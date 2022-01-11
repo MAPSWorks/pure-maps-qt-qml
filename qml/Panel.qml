@@ -33,7 +33,7 @@ Rectangle {
 //        samples: 1 + radius*2
 //    }
     y: mode === panelModes.bottom ? parent.height - _offset : -height + _offset
-    z: 910
+    z: 1000
 
     // properties
     property int  contentHeight: 0
@@ -78,7 +78,9 @@ Rectangle {
         drag.axis: Drag.YAxis
         // "filterChildren" makes sometimes parts of the panel transparent to
         // drag events. probably some bug in either my implementation or qml
-        // drag.filterChildren: true
+        // 21.02.07 - enabled it again as it allows to have flickable handling
+        // poi info. in addition, allows to have listitempl covering full width
+        drag.filterChildren: true
         drag.minimumY: panel.mode === panel.panelModes.bottom ? panel.parent.height - panel.height : -panel.height
         drag.maximumY: panel.mode === panel.panelModes.bottom ? panel.parent.height : 0
         drag.target: panel

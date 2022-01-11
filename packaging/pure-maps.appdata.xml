@@ -17,11 +17,11 @@
  <url type="bugtracker">https://github.com/rinigus/pure-maps/issues</url>
  <url type="donation">https://rinigus.github.io/donate</url>
  <url type="translate">https://www.transifex.com/rinigus/pure-maps</url>
- <launchable desktop-id="io.github.rinigus.PureMaps"/>
+ <launchable type="desktop-id">io.github.rinigus.PureMaps.desktop</launchable>
  <provides>
   <binary>pure-maps</binary>
  </provides>
- <project_license>GPL-3.0+</project_license>
+ <project_license>GPL-3.0-or-later</project_license>
  <screenshots>
   <screenshot type="default">
    <caption>Main screen of the application</caption>
@@ -38,6 +38,260 @@
  </screenshots>
  <metadata_license>CC-BY-SA-3.0</metadata_license>
  <releases>
+   <release  version="2.9.0" date="2021-11-22">
+     <description>
+       <ul>
+         <li>Add support for HERE through dedicated profile</li>
+         <li>Add support for licenses</li>
+         <li>Add support for MapTiler</li>
+         <li>Add and fix Geoclue2 plugin [fix by tpikonen]</li>
+         <li>Set center of the map as a reference point for geocoders</li>
+         <li>Disable plugins with missing API keys or licenses</li>
+         <li>Indicate when routing has failed</li>
+         <li>Fix direction calculations used by positioning source</li>
+         <li>Allow to use system-wide Geomag [tpikonen]</li>
+         <li>Update Ubuntu Touch packaging [jonnius]</li>
+         <li>Try to activate map matching if requested</li>
+         <li>Allow to specify accuracy of positioning</li>
+         <li>Revise API keys handling</li>
+         <li>Bugfixes and small enhancements</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.8.1" date="2021-10-17">
+     <description>
+       <ul>
+         <li>Bugfixes</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.8.0" date="2021-10-17">
+     <description>
+       <ul>
+         <li>Add app-specific PositionSource</li>
+         <li>Add missing icons for navigation instructions [Lolek]</li>
+         <li>Add support for large number of languages by Valhalla</li>
+         <li>Drop support for Thunderforest maps</li>
+         <li>Adjust dependencies</li>
+         <li>Bugfixes and small enhancements</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.7.5" date="2021-05-22">
+     <description>
+       <ul>
+         <li>Allow to specify default font provider</li>
+         <li>Require QtPositioning 5.4 and use Qt calculated direction</li>
+         <li>Update translations</li>
+         <li>[sfos] Adjust packaging for Jolla Store</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.7.0" date="2021-04-09">
+     <description>
+       <ul>
+         <li>Transition to CMake build system [PureTryOut]</li>
+         <li>Update Ubuntu Touch build scripts [jonnius]</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.6.5" date="2021-03-30">
+     <description>
+       <ul>
+         <li>Fix crash induced by absent location coordinates</li>
+         <li>Add OpenSlopeMap tiles provider [henning-schild]</li>
+         <li>Use DBus API introduced in 2.0 of OSM Scout Server</li>
+         <li>[ubuntu touch] Remove tmp in cache workaround [jonnius]</li>
+         <li>[ubuntu touch] Packaging improvements [jonnius]</li>
+         <li>Update license identifier [Newbyte]</li>
+         <li>Bugfixes</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.6.0" date="2021-02-20">
+     <description>
+       <ul>
+         <li>Route manipulation through selection of point of interest on map</li>
+         <li>Use scrollable panel when showing data regarding points of interest</li>
+         <li>Show remaining distance and time to the upcoming waypoint on the main screen</li>
+         <li>Keep track on arrivals to intermediate waypoints</li>
+         <li>Bugfixes</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.5.0" date="2021-02-03">
+     <description>
+       <ul>
+         <li>Allow to edit route</li>
+         <li>Quick route calculation through selection of point of interest</li>
+         <li>Better handling of some corner cases in routing</li>
+         <li>Refactor page stack implementation</li>
+         <li>Add support to Sailfish Harbour MyBackup [atlochowski]</li>
+         <li>Show waypoints and destinations using dedicated icons</li>
+         <li>Explicitly invoke python3 in check-json [Newbyte]</li>
+         <li>Bugfixes</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.4.1" date="2021-01-08">
+     <description>
+       <ul>
+         <li>Fix GPX routers</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.4.0" date="2021-01-05">
+     <description>
+       <ul>
+	 <li>Add support for routing waypoints order optimization</li>
+	 <li>Allow to see more routes from history</li>
+	 <li>Adjust basemap selector</li>
+	 <li>Handle type and name separately in nearby search</li>
+	 <li>Switch default online geocoder to Photon</li>
+	 <li>Improve MapQuest nearby search support</li>
+	 <li>Navigation overview page adjustments</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.3.0" date="2020-12-31">
+     <description>
+       <ul>
+	 <li>Add support for intermediate destinations and waypoints</li>
+	 <li>Adjust naming of Ubuntu Touch platform [jonnius]</li>
+	 <li>Adjust desktop and appdata to support PureOS Store [dos1]</li>
+	 <li>Drop support for Digitransit router</li>
+	 <li>Use text color to indicate interactive elements</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.2.0" date="2020-12-16">
+     <description>
+       <ul>
+	 <li>Show close consecutive maneuvers</li>
+	 <li>Show roundabout exit number for supported routers</li>
+	 <li>Fix maneuver icons for OSRM</li>
+	 <li>Autohide buttons by default for new users</li>
+	 <li>Reduce vertical requirements of navigation overview bar</li>
+	 <li>Handle arrival to destination by switching to dedicated mode</li>
+	 <li>Change DBus registration order</li>
+	 <li>Rewrite imlpementation determining mode of the application</li>
+         <li>Update translations</li>
+	 <li>Bugfixes, optimizations, and visual adjustments</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.1.0" date="2020-11-26">
+     <description>
+       <ul>
+         <li>Rewrite navigation guidance</li>
+         <li>Navigation direction is preferred for orienting the map</li>
+         <li>Switch off navigation mode on reaching destination</li>
+         <li>[kirigami,qtcontrols] Support inhibition of screensaver</li>
+         <li>Support for external control by DBus</li>
+         <li>Update translations</li>
+         <li>Updated packaging for UBPorts [jonnius]</li>
+         <li>Matrix channel added</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="2.0.0" date="2020-10-31">
+     <description>
+       <ul>
+         <li>Switch to C++ main</li>
+         <li>Prevent voice navigation stopping other audio [research by Karry]</li>
+         <li>Allow to reverse GPX track</li>
+         <li>Refactor command line and DBus handling</li>
+         <li>Allow to specify default service providers</li>
+         <li>Update packaging scripts for new build system [ubports by jonnius]</li>
+         <li>[kirigami,qtcontrols] Add build-in clipboard support</li>
+         <li>Update translations</li>
+      </ul>
+     </description>
+   </release>
+   <release  version="1.29.2" date="2020-10-24">
+     <description>
+       <ul>
+         <li>Update Photon URL</li>
+         <li>Update translations</li>
+      </ul>
+     </description>
+   </release>
+   <release  version="1.29.1" date="2020-10-18">
+     <description>
+       <ul>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="1.29.0" date="2020-08-24">
+     <description>
+       <ul>
+         <li>Show route using casing to reduce interference with traffic</li>
+         <li>Use Audio.NotificationRole for instructions</li>
+         <li>[ubports] Fix text update in POIs</li>
+         <li>[ubports] Add slim builds [jonnius]</li>
+         <li>[ubports] Update docs [jonnius]</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="1.28.1" date="2020-07-11">
+     <description>
+       <ul>
+         <li>Update translations</li>
+         <li>[ubports] fix pasting into search field [StefWe]</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="1.28.0" date="2020-07-02">
+     <description>
+       <ul>
+         <li>Distance formatted according to locale</li>
+         <li>Fix race condition while loading multi-language map styles</li>
+         <li>Fit to view route and found POIs, rearrange for margins changes</li>
+         <li>Rearrange properties and methods to improve code organization</li>
+         <li>Require Mapbox GL QML 1.7.0 or higher</li>
+         <li>[ubports] Switch to Mapbox GL Native upstream [jonnius]</li>
+         <li>Bugfixes, smaller adjustments</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="1.27.1" date="2020-06-05">
+     <description>
+       <ul>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
+   <release  version="1.27.0" date="2020-05-27">
+     <description>
+       <ul>
+         <li>Add support for compass</li>
+         <li>Correct for magnetic declination when using compass</li>
+         <li>Add support for navigation without screen</li>
+         <li>Rearrange preferences page</li>
+         <li>[ubports] Add support for GPX loading [StefWe]</li>
+         <li>[ubports] Update build config [jonnius]</li>
+         <li>[ubports] Packaging and documentation updates [jonnius]</li>
+         <li>[kirigami] Move main menu drawer to the right</li>
+         <li>[kirigami] Add support for dark themes</li>
+         <li>[kirigami,qtcontrols] Make slider touchscreen friendly</li>
+         <li>[kirigami] Disable wide layout in forms</li>
+         <li>[silica] Switch to KeepAlive 1.2</li>
+         <li>Bugfixes, smaller adjustments</li>
+         <li>Update translations</li>
+       </ul>
+     </description>
+   </release>
    <release  version="1.26.2" date="2020-02-08">
      <description>
        <ul>
@@ -176,4 +430,8 @@
      </description>
    </release>
  </releases>
+ <custom>
+   <value key="Purism::form_factor">workstation</value>
+   <value key="Purism::form_factor">mobile</value>
+ </custom>
 </component>

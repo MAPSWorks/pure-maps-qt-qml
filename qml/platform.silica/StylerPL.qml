@@ -63,9 +63,10 @@ QtObject {
     property string iconClose: "image://theme/icon-m-dismiss"
     property string iconDelete: "image://theme/icon-m-delete"
     property string iconDot: Theme.colorScheme ? Qt.resolvedUrl("../icons/sailfishos/center-black.svg") : Qt.resolvedUrl("../icons/sailfishos/center-white.svg")
-    property string iconDown: "image://theme/icon-m-enter-close"
+    property string iconDown: "image://theme/icon-m-down"
     property string iconEdit: "image://theme/icon-m-edit"
     property string iconEditClear: "image://theme/icon-m-clear"
+    property string iconEmail: "image://theme/icon-m-mail"
     property string iconFavorite: "image://theme/icon-m-favorite"
     property string iconFavoriteSelected: "image://theme/icon-m-favorite-selected"
     property string iconManeuvers: "image://theme/icon-m-shuffle"
@@ -89,6 +90,7 @@ QtObject {
     property string iconShortlistedSelected: "image://theme/icon-m-annotation-selected"
     property string iconStart: "image://theme/icon-m-play"
     property string iconStop: "image://theme/icon-m-clear"
+    property string iconUp: "image://theme/icon-m-up"
     property string iconWebLink: "image://theme/icon-m-link"
 
     // item sizes

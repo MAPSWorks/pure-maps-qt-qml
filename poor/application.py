@@ -18,6 +18,7 @@
 """An application to display maps and stuff."""
 
 import poor
+import random
 import sys
 
 __all__ = ("Application",)
@@ -29,14 +30,20 @@ class Application:
 
     def __init__(self):
         """Initialize an :class:`Application` instance."""
+        # some of the components are initialized separately
+        # after handling of all licenses
+        random.seed()
+        self.history = poor.HistoryManager()
+        self.magfield = poor.MagField()
+        self.sun = poor.Sun()
+        self._voice = {}
+
+    def initialize(self):
+        """Initialize all components that may depend on licenses."""
         self.basemap = poor.MapManager()
         self.geocoder = None
         self.guide = None
-        self.history = poor.HistoryManager()
-        self.narrative = poor.Narrative()
         self.router = None
-        self.sun = poor.Sun()
-        self.voice_tester = None
         self.set_basemap(poor.conf.basemap)
         self.set_geocoder(poor.conf.geocoder)
         self.set_guide(poor.conf.guide)
@@ -53,10 +60,6 @@ class Application:
                         items.append(item)
         return items
 
-    def has_mapmatching(self):
-        """Return True if map matching requirements are met"""
-        return (poor.util.requirement_found("harbour-osmscout-server") or poor.util.requirement_found("osmscout-server"))
-
     def quit(self):
         """Quit the application."""
         print("Quitting")
@@ -66,8 +69,8 @@ class Application:
         poor.conf.write()
         print("Calling self.history.write")
         self.history.write()
-        print("Calling self.narrative.quit")
-        self.narrative.quit()
+        print("Closing voice engines")
+        for i in self._voice.keys(): self._voice[i].quit()
         print("All quit methods called")
 
     def set_basemap(self, basemap):
@@ -126,12 +129,22 @@ class Application:
                 if default != router:
                     self.set_router(default)
 
-    def voice_tester_start(self):
-        if self.voice_tester is not None: return
-        self.voice_tester = poor.VoiceGenerator()
-        return True
+    def set_voice(self, engine, language, gender):
+        self.voice(engine).set_voice(language, gender)
 
-    def voice_tester_stop(self):
-        if self.voice_tester is not None:
-            self.voice_tester.quit()
-            self.voice_tester = None
+    def voice(self, engine):
+        if engine not in self._voice:
+            self._voice[engine] = poor.VoiceGenerator()
+        return self._voice[engine]
+
+    def voice_active(self, engine):
+        return self.voice(engine).active
+
+    def voice_current_engine(self, engine):
+        return self.voice(engine).current_engine
+
+    def voice_get_uri(self, engine, text):
+        return self.voice(engine).get_uri(text)
+
+    def voice_make(self, engine, text, preserve):
+        self.voice(engine).make(text, preserve)

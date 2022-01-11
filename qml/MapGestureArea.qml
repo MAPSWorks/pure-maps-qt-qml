@@ -17,7 +17,7 @@
  */
 
 import QtQuick 2.0
-import QtPositioning 5.3
+import QtPositioning 5.4
 import MapboxMap 1.0
 
 MapboxMapGestureArea {
@@ -36,7 +36,11 @@ MapboxMapGestureArea {
         area.degLatPerPixel = degLatPerPixel;
 
         // Toggle auto-center if position marker clicked.
-        if (area.coordinatesMatch(geocoordinate, map.position.coordinate)) {
+        if (app.mode !== modes.navigate &&
+                app.mode !== modes.followMe &&
+                app.mode !== modes.navigatePost &&
+                gps.ready &&
+                area.coordinatesMatch(geocoordinate, gps.coordinate)) {
             map.autoCenter = !map.autoCenter;
             notification.flash(map.autoCenter ?
                                    app.tr("Auto-center on") :
@@ -56,7 +60,7 @@ MapboxMapGestureArea {
                 selectedPoi = { 'poi': poi, 'dist2': dist2 };
             }
         });
-        if (selectedPoi && (app.mode === modes.navigate || app.mode === modes.followMe))
+        if (selectedPoi && (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost))
             return app.notification.flash(app.tr("Stop navigation to select POI"), "mapgesture poi")
         if (selectedPoi)
             return pois.show(selectedPoi.poi);
@@ -74,7 +78,7 @@ MapboxMapGestureArea {
     }
 
     onPressAndHoldGeo: {
-        if (app.mode === modes.navigate || app.mode === modes.followMe)
+        if (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost)
             return app.notification.flash(app.tr("Stop navigation to select POI"), "mapgesture press and hold")
 
         var p = pois.add({ "x": geocoordinate.longitude,

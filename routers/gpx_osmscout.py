@@ -29,6 +29,7 @@ CONF_DEFAULTS = {
     "file": "",
     "language": poor.util.get_default_language("en"),
     "type": "auto",
+    "reverse": 0
 }
 
 ICONS = {
@@ -102,14 +103,16 @@ MODE = {
 
 URL = "http://localhost:8553/v2/trace_route"
 
-def route(fm, to, heading, params):
+def route(locations, params):
     """Find route and return its properties as a dictionary."""
     fname = poor.conf.routers.gpx_osmscout.file
     language = poor.conf.routers.gpx_osmscout.language
+    rev = poor.conf.routers.gpx_osmscout.reverse
     units = "kilometers" if poor.conf.units == "metric" else "miles"
     ctype = poor.conf.routers.gpx_osmscout.type
     x, y = poor.util.read_gpx(fname)
     shape = [dict(lat=y[i], lon=x[i]) for i in range(len(x))]
+    if rev: shape = list(reversed(shape))
     input = dict(shape=shape,
                  shape_match="map_snap",
                  costing=ctype,
@@ -150,6 +153,16 @@ def parse_result_valhalla(result, mode):
         verbal_post=maneuver.get("verbal_post_transition_instruction", None),
         duration=float(maneuver.time),
     ) for maneuver in legs.maneuvers]
-    route = dict(x=x, y=y, maneuvers=maneuvers, mode=mode)
-    route["language"] = result.trip.language
+    locations = [
+        dict( x=x[0], y=y[0],
+              text="" ),
+        dict( x=x[-1], y=y[-1],
+              destination = True,
+              text="" )
+    ]
+    route = dict(x=x, y=y, maneuvers=maneuvers,
+                 locations=locations,
+                 location_indexes=[0, len(x)-1],
+                 mode=mode)
+    route["language"] = result.trip.language.replace('-','_')
     return route

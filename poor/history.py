@@ -20,6 +20,7 @@
 import os
 import poor
 
+from poor.attrdict import AttrDict
 from poor.i18n import _
 
 __all__ = ("HistoryManager",)
@@ -74,10 +75,12 @@ class HistoryManager:
 
     def add_route(self, route):
         """Add `route` to the list of routes."""
-        route['from']['text'] = route['from']['text'].strip()
-        route['to']['text'] = route['to']['text'].strip()
-        if not route['from']['text'] or not route['to']['text']: return
-        self.remove_route(route['from']['text'], route['to']['text'])
+        route = AttrDict(route)
+        for r in route.locations:
+            if 'text' not in r: return
+            r['text'] = r['text'].strip()
+        if len(route.locations) < 2 or not route.locations[0]['text'] or not route.locations[-1]['text']: return
+        self.remove_route(route)
         self._routes.insert(0, route)
 
     def clear(self):
@@ -130,6 +133,16 @@ class HistoryManager:
                                  "Hotel",
                                  "Pub",
                                  "Restaurant"]
+        # convert old routes format to the new one
+        for i in range(len(self._routes)):
+            if isinstance(self._routes[i], dict) and "from" in self._routes[i]:
+                # old format, pre 2.2
+                r = self._routes[i]
+                self._routes[i] = dict(locations=[ r['from'], r['to'] ], optimized=False)
+            elif isinstance(self._routes[i], list):
+                # old format, 2.2
+                self._routes[i] = dict(locations=self._routes[i], optimized=False)
+            self._routes[i] = AttrDict(self._routes[i])
 
     @property
     def routes(self):
@@ -164,12 +177,15 @@ class HistoryManager:
             if self._place_types[i].lower() == place_type:
                 del self._place_types[i]
 
-    def remove_route(self, from_text, to_text):
+    def remove_route(self, route):
         """Remove route with the same text for origin and target from the list of routes."""
-        f_text = from_text.strip()
-        t_text = to_text.strip()
+        def rkey(route):
+            return ' - '.join([r['text'] for r in route.locations]) + ('#opt' if route.optimized else '#no')
+        if isinstance(route, dict):
+            route = AttrDict(route)
+        key = rkey(route)
         for i in reversed(range(len(self._routes))):
-            if self._routes[i]['from']['text'] == f_text and self._routes[i]['to']['text'] == t_text:
+            if rkey(self._routes[i]) == key:
                 del self._routes[i]
 
     def write(self):

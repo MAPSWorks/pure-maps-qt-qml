@@ -22,7 +22,6 @@ import "../qml/platform"
 FormLayoutPL {
     id: settingsBlock
     spacing: styler.themePaddingLarge
-    width: parent.width
 
     property bool full: true // ignored for this router
     property string selectedFile
@@ -39,6 +38,13 @@ FormLayoutPL {
                 app.conf.set("routers.gpx.file", settingsBlock.selectedFile);
             });
         }
+    }
+
+    TextSwitchPL {
+        checked: False
+        text: app.tr("Reverse")
+        Component.onCompleted: checked = app.conf.get("routers.gpx.reverse")
+        onCheckedChanged: app.conf.set("routers.gpx.reverse", checked ? 1 : 0)
     }
 
     ComboBoxPL {

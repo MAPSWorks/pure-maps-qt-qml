@@ -36,7 +36,7 @@ Rectangle {
         if (h) return h + 2*styler.themePaddingMedium;
         return 0;
     }
-    radius: styler.themePaddingMedium
+    radius: styler.radius
     visible: !app.modalDialog && app.conf.showNavigationSign
     width: {
         if (!app.conf.showNavigationSign) return 0;
@@ -48,11 +48,11 @@ Rectangle {
         if (w) return w + 2*styler.themePaddingLarge;
         return 0;
     }
-    z: 500
+    z: 400
 
-    property var    sign:   app.navigationStatus.sign
-    property var    street: app.navigationStatus.street
-    property bool   signActive: (app.mode === modes.navigate || app.mode === modes.navigate) && sign!=null && (sign.exit_number!=null || sign.exit_name!=null || sign.exit_toward!=null || sign.exit_branch!=null)
+    property var    sign:   app.navigator.sign
+    property var    street: app.navigator.street
+    property bool   signActive: app.mode === modes.navigate && sign!=null && (sign.exit_number!=null || sign.exit_name!=null || sign.exit_toward!=null || sign.exit_branch!=null)
 
     Rectangle {
         id: signBorder
@@ -61,7 +61,7 @@ Rectangle {
         border.color: "white"
         border.width: styler.themePaddingSmall/2
         color: "transparent"
-        radius: styler.themePaddingMedium
+        radius: styler.radius
     }
     
     LabelPL {

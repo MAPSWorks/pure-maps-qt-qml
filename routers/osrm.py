@@ -57,7 +57,9 @@ NARRATIVE = {
  "roundabout-turn": "Turn {modifier} in the roundabout.",
 }
 
-URL = "http://router.project-osrm.org/route/v1/car/{fm};{to}?steps=true&overview=full"
+URL = "http://router.project-osrm.org/route/v1/car/{locstring}?steps=true&annotations=nodes&overview=full"
+URL_OPT = "http://router.project-osrm.org/trip/v1/car/{locstring}?steps=true&annotations=nodes&overview=full" + \
+    "&source=first&destination=last&roundtrip=false"
 cache = {}
 
 def init_icons():
@@ -65,9 +67,9 @@ def init_icons():
     # OSRM's maneuver types and modifiers match Mapbox directions
     # icons, which are included under qml/icons/navigation.
     directory = os.path.join(poor.DATA_DIR, "qml", "icons", "navigation")
-    icons = glob.glob("{}/*.svg".format(directory))
+    icons = glob.glob("{}/*-white.svg".format(directory))
     icons = list(map(os.path.basename, icons))
-    icons = [x.replace(".svg", "") for x in icons]
+    icons = [x.replace("-white.svg", "") for x in icons]
     ICONS.extend(icons)
 
 def get_maneuver_components(maneuver):
@@ -126,27 +128,46 @@ def prepare_endpoint(point):
     """Return `point` as a string ready to be passed on to the router."""
     if isinstance(point, (list, tuple)):
         return "{:.5f},{:.5f}".format(point[0], point[1])
+    if isinstance(point, dict):
+        return "{:.5f},{:.5f}".format(point["x"], point["y"])
     geocoder = poor.Geocoder("default")
     results = geocoder.geocode(point, params=dict(limit=1))
     return prepare_endpoint((results[0]["x"], results[0]["y"]))
 
-def route(fm, to, heading, params):
+def route(locations, params):
     """Find route and return its properties as a dictionary."""
-    fm, to = map(prepare_endpoint, (fm, to))
-    url = URL.format(**locals())
+    locstring = ";".join(map(prepare_endpoint, locations))
+    heading = params.get('heading', None)
+    optimized = params.get('optimized', False) if len(locations) > 3 else False
+    if optimized:
+        url = URL_OPT.format(**locals())
+    else:
+        url = URL.format(**locals())
     with poor.util.silent(KeyError):
         return copy.deepcopy(cache[url])
-    result = poor.http.get_json(url)["routes"][0]
-    result = poor.AttrDict(result)
+    routes = "trips" if optimized else "routes"
+    result = poor.http.get_json(url)
+    waypoints = result["waypoints"]
+    result = poor.AttrDict(result[routes][0])
     x, y = poor.util.decode_epl(result.geometry)
-    maneuvers = [dict(
-        x=float(step.maneuver.location[0]),
-        y=float(step.maneuver.location[1]),
-        icon=parse_icon(step.maneuver),
-        narrative=parse_narrative(step.maneuver, step.get("name", "")),
-        duration=float(step.duration),
-    ) for step in result.legs[0].steps]
-    route = dict(x=x, y=y, maneuvers=maneuvers, mode="car")
+    maneuvers, loc_index = [], [0]
+    for leg in result.legs:
+        maneuvers.extend([dict(
+            x=float(step.maneuver.location[0]),
+            y=float(step.maneuver.location[1]),
+            icon=parse_icon(step.maneuver),
+            narrative=parse_narrative(step.maneuver, step.get("name", "")),
+            duration=float(step.duration),
+            roundabout_exit_count=step.maneuver.get("exit", None),
+        ) for step in leg.steps])
+        loc_index.append(loc_index[-1] + len(leg.annotation.nodes) - 1)
+    if optimized:
+        li = { waypoints[i]["waypoint_index"] : i for i in range(len(waypoints)) }
+        locations=[locations[li[i]] for i in range(len(waypoints))]
+    route = dict(x=x, y=y,
+                 locations=locations,
+                 location_indexes=loc_index,
+                 maneuvers=maneuvers, mode="car", optimized=optimized)
     route["language"] = "en_US"
     if route and route["x"]:
         cache[url] = copy.deepcopy(route)

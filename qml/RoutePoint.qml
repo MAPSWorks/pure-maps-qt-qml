@@ -35,15 +35,19 @@ ValueButtonPL {
     property string text
     property string title
 
+    signal updated;
+
     BusyIndicatorSmallPL {
         anchors.right: parent.right
         anchors.rightMargin: styler.themeHorizontalPageMargin + (parent.width - page.width)
         anchors.verticalCenter: parent.verticalCenter
-        running: text === app.tr("Current position") && !gps.ready
+        running: text === app.tr("Current position") && !gps.coordinateValid
         z: parent.z + 1
     }
 
-    onClicked: {
+    onClicked: activate()
+
+    function activate() {
         var dialog = app.push(Qt.resolvedUrl("RoutePointPage.qml"), {
                                   "comment": comment,
                                   "currentSelection": text,
@@ -54,7 +58,7 @@ ValueButtonPL {
         dialog.accepted.connect(function() {
             query = dialog.query;
             if (dialog.selection.selectionType === dialog.selectionTypes.currentPosition) {
-                coordinates = map.getPosition();
+                coordinates = app.getPosition();
                 text = app.tr("Current position");
             }
             else if (dialog.selection.coordinate) {
@@ -63,6 +67,7 @@ ValueButtonPL {
             } else {
                 console.log("RoutePoint: " + label + " selection error: " + JSON.stringify(dialog.selection))
             }
+            updated();
         });
     }
 }

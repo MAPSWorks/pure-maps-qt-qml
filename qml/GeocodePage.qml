@@ -28,7 +28,7 @@ PagePL {
     pageMenu: PageMenuPL {
         PageMenuItemPL {
             iconName: styler.iconPreferences
-            text: app.tr("Using %1").arg(name)
+            text: app.tr("Change provider (%1)").arg(name)
             property string name: py.evaluate("poor.app.geocoder.name")
             onClicked: {
                 var dialog = app.push(Qt.resolvedUrl("GeocoderPage.qml"));
@@ -43,7 +43,9 @@ PagePL {
             iconName: styler.iconMaps
             text: app.tr("Map")
             onClicked: {
-                var pois = geo.searchResults;
+                var pois = geo.searchResults.filter(function(p) {
+                    return p.poiType !== "PM:Query"
+                });
                 app.hideMenu(app.tr("Search: %1").arg(geo.query));
                 map.fitViewToPois(pois);
             }
@@ -51,6 +53,7 @@ PagePL {
     }
 
     property string browsingQuery
+    property alias  query: geo.query
 
     GeocodeItem {
         id: geo

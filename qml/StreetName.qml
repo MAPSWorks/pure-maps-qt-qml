@@ -27,8 +27,8 @@ Rectangle {
     anchors.bottomMargin: styler.themePaddingSmall
     anchors.horizontalCenter: parent.horizontalCenter
     color: "transparent"
-    height: cover.height
-    visible: !app.modalDialog
+    height: !navigationOverview.streetNameInOverview ? cover.height : 0
+    visible: !app.modalDialog && !navigationOverview.streetNameInOverview
     width: cover.width
     z: 400
 
@@ -46,10 +46,9 @@ Rectangle {
         color: styler.itemBg
         height: streetname.height
         opacity: 0.75
-        radius: styler.themePaddingMedium
+        radius: styler.radius
         visible: streetname.visible
         width: streetname.width + 2*styler.themePaddingMedium
-        z: 450
     }
 
     LabelPL {
@@ -61,9 +60,8 @@ Rectangle {
         maximumLineCount: 1
         text: gps.streetName
         truncMode: truncModes.fade
-        visible: (app.mode === modes.navigate || app.mode === modes.followMe) && (text !== undefined && text !== null && text.length>0)
+        visible: (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost) && (text !== undefined && text !== null && text.length>0)
         width: implicitWidth > master.maxWidth - 4*styler.themePaddingMedium ?
                    master.maxWidth-4*styler.themePaddingMedium : implicitWidth
-        z: 500
     }
 }

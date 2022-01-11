@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014 Osmo Salomaa, 2018 Rinigus
+# Copyright (C) 2014 Osmo Salomaa, 2018-2020 Rinigus
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -26,6 +26,12 @@ import pyotherside
 
 __all__ = ("ConfigurationStore",)
 
+_default_basemap = "MapTiler"
+_default_geocoder = "photon"
+_default_guide = "foursquare"
+_default_router = "stadiamaps"
+_default_profile = "online"
+
 DEFAULTS = {
     "auto_center": False,
     "auto_complete_geo": True,
@@ -33,20 +39,25 @@ DEFAULTS = {
     "auto_rotate_when_navigating": True,
     "basemap_auto_light": "none",
     "basemap_auto_mode": True,
+    "basemap_fallback": "OpenTopoMap", # should work without any API keys or API keys are always added
     "basemap_lang": "local",
     "basemap_light": "",
     "basemap_type": "",
     "basemap_vehicle": "",
+    "compass_use": False,
     "center": [13.0, 49.0],
     "devel_coordinate_center": False,
     "devel_show_z": False,
+    "follow_me_transport_mode": "foot",
+    "font_provider": "mapbox",
+    "route_page_show_destinations_help": True,
     # "always", "navigating" or "never".
     "keep_alive": "navigating",
+    "keep_alive_background": "never",
     # "none", "car", "bicycle", "foot"
-    "map_matching_when_following": "none",
     "map_matching_when_idle": "none",
     "map_matching_when_navigating": False,
-    "map_mode_auto_switch_time": -1,
+    "map_mode_auto_switch_time": 30,
     "map_mode_clean_on_start": False,
     "map_mode_clean_show_basemap": False,
     "map_mode_clean_show_center": False,
@@ -66,28 +77,35 @@ DEFAULTS = {
     "map_zoom_auto_time": 60.0,
     "map_zoom_auto_when_navigating": False,
     "map_zoom_auto_zero_speed_z": 16.0,
+    "navigation_horizontal_accuracy": 15.0,
     "poi_list_show_bookmarked": False,
-    "profile": "online",
+    "profile": _default_profile,
     "profiles": {
         "mixed": {
-            "basemap": "Mapbox",
-            "geocoder": "photon",
-            "guide": "foursquare",
-            "router": "stadiamaps"
+            "basemap": _default_basemap,
+            "geocoder": _default_geocoder,
+            "guide": _default_guide,
+            "router": _default_router
         },
         "online": {
-            "basemap": "Mapbox",
-            "geocoder": "photon",
-            "guide": "foursquare",
-            "router": "stadiamaps"
+            "basemap": _default_basemap,
+            "geocoder": _default_geocoder,
+            "guide": _default_guide,
+            "router": _default_router
         },
         "offline": {
             "basemap": "OSM Scout",
             "geocoder": "osmscout",
             "guide": "osmscout",
             "router": "osmscout"
-            }
         },
+        "HERE": {
+            "basemap": "HERE",
+            "geocoder": "here",
+            "guide": _default_guide,
+            "router": "here"
+        }
+     },
     "reroute": True,
     "share_address": True,
     "share_googlemaps": False,
@@ -217,6 +235,10 @@ class ConfigurationStore(poor.AttrDict):
     def register_keys(self, values):
         """Add configuration `values` for keys if missing."""
         self._register({"keys": values})
+
+    def register_licenses(self, values):
+        """Add configuration `values` for licenses if missing."""
+        self._register({"licenses": values})
 
     def register_guide(self, name, values):
         """Add configuration `values` for guide `name` if missing."""

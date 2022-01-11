@@ -1,6 +1,6 @@
 /* -*- coding: utf-8-unix -*-
  *
- * Copyright (C) 2018 Rinigus
+ * Copyright (C) 2018-2020 Rinigus
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,14 +27,22 @@ ApplicationWindow {
     height: 480
     visible: true
 
+    property real   compassOrientationOffset: 0
     property alias  initialPage: pageStack.initialItem
     property string menuPageUrl
     property var    pages: StackPL { }
-    property bool   running: visible
+    property bool   running: visible || keepAliveBackground
     property int    screenHeight: height
     property bool   screenLarge: false
     property int    screenWidth: width
-    property bool   keepAlive: false // not used - desktop is not expected to be falling asleep
+    property bool   keepAlive: false
+    property bool   keepAliveBackground: false // not used
+
+    ScreenSaver {
+        name: "Pure Maps"
+        preventBlanking: active && keepAlive
+        reason: "Showing Maps"
+    }
 
     StackView {
         id: pageStack
@@ -55,11 +63,6 @@ ApplicationWindow {
 
     function activate() {
         appWindow.raise();
-    }
-
-    function clearPages() {
-        // not used in the platforms with menu shown
-        // as a page in a stack
     }
 
     function initPages() {

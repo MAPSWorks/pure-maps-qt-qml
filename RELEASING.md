@@ -3,24 +3,32 @@ Releasing a New Version
 
 ```bash
 # Update translations.
-make pot
+tools/update-translations
 tx push -s
 tx pull -a --minimum-perc=85
 sed -i "s/charset=CHARSET/charset=UTF-8/" po/*.po
 tools/check-translations
-tools/check-translations | grep %
 git add po/*.po po/*.pot; git status
 git commit -m "Update translations"
 
 # Check, test, do final edits and release.
-tools/manage-keys inject .
-make check test
-tools/manage-keys strip .
+cp tools/apikeys.py poor
+make -f Makefile.test
+git checkout poor/apikeys.py
 git status
-emacs poor/__init__.py rpm/*.spec Makefile packaging/ubports/manifest.json
+emacs rpm/*.spec CMakeLists.txt packaging/click/manifest.json
 emacs NEWS.md packaging/pure-maps.appdata.xml
-make rpm-silica
+git add NEWS.md packaging/click/manifest.json packaging/pure-maps.appdata.xml CMakeLists.txt rpm/harbour-pure-maps.spec
 git status
 ```
 
-After that, trigger update at Flathub.
+Make a release at Github and generate corresponding vendored archive:
+
+```
+PM_VERSION=2.6.5
+git-archive-all -v --prefix=pure-maps-${PM_VERSION} pure-maps-${PM_VERSION}.tar.gz
+```
+
+Upload the archive by attaching it to the release.
+
+After that, trigger update at Flathub and OBS.

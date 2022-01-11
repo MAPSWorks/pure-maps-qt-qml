@@ -47,6 +47,18 @@ PagePL {
         }
 
         ListItemLabel {
+            visible: app.conf.profile === "offline"
+            text: app.tr("You are using an offline profile. Make sure that you have OSM Scout Server installed " +
+                         "and running. Depending on your system, it is available either in application stores " +
+                         "(OpenRepos for Sailfish OS, OpenStore for Ubuntu Touch), Flathub, or your distribution. " +
+                         'See <a href="https://rinigus.github.io/osmscout-server">OSM Scout Server manual</a> for ' +
+                         "details.")
+            textFormat: Text.StyledText
+            truncMode: truncModes.none
+            wrapMode: Text.WordWrap
+        }
+
+        ListItemLabel {
             text: app.tr("Last error:\n%1").arg(lastError)
             truncMode: truncModes.none
             wrapMode: Text.WordWrap
@@ -103,15 +115,20 @@ PagePL {
                 anchors.right: parent.right
                 anchors.topMargin: styler.isSilica ? parent.top : undefined
                 anchors.verticalCenter: styler.isSilica ? undefined : label.verticalCenter
-                model: [ app.tr("Online"), app.tr("Offline"), app.tr("Mixed") ]
-                property var values: ["online", "offline", "mixed"]
+                model: [ app.tr("Online"), app.tr("Offline"),
+                    hereAvailable ? app.tr("HERE - Online") : app.tr("HERE (disabled)"),
+                    app.tr("Mixed") ]
+                property var values: ["online", "offline", "HERE", "mixed"]
+                property bool hereAvailable: py.evaluate("poor.key.has_here")
                 Component.onCompleted: {
                     var value = app.conf.profile;
                     profileComboBox.currentIndex = profileComboBox.values.indexOf(value);
                 }
                 onCurrentIndexChanged: {
                     var index = profileComboBox.currentIndex;
-                    py.call_sync("poor.app.set_profile", [profileComboBox.values[index]]);
+                    var val = profileComboBox.values[index];
+                    if (val === "HERE" && !hereAvailable) return;
+                    py.call_sync("poor.app.set_profile", [val]);
                 }
             }
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Copyright (C) 2014 Osmo Salomaa, 2018 Rinigus
+# Copyright (C) 2014 Osmo Salomaa, 2018-2020 Rinigus
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,7 +17,9 @@
 
 """An application to display maps and stuff."""
 
-__version__ = "1.26.2"
+# Only update major version changes that can
+# lead to configuration file modifications
+__version__ = "2.0"
 
 try:
     import pyotherside
@@ -50,10 +52,10 @@ from poor.guide import Guide
 from poor.history import HistoryManager
 from poor.keystore import KeyStore
 key = KeyStore()
+from poor.magfield import MagField
 from poor.router import Router
 from poor.sun import Sun
 from poor.voice import VoiceGenerator
-from poor.narrative import Narrative
 from poor.application import Application
 
 assert Application
@@ -70,9 +72,9 @@ assert http
 assert i18n
 assert KeyStore
 assert LOCALE_DIR
+assert MagField
 assert Map
 assert MapManager
-assert Narrative
 assert polysimp
 assert Router
 assert storage

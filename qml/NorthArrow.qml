@@ -30,7 +30,7 @@ MapButton {
     indicator: map.autoRotate
     opacity: hidden ? 0 : 1
     y: {
-        if (app.mode === modes.navigate || app.mode === modes.followMe) {
+        if (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost) {
             if (!app.portrait)
                 return navigationSign.y + navigationSign.height;
             return (parent.height - height)/2;
@@ -49,8 +49,24 @@ MapButton {
 
     Behavior on opacity { NumberAnimation { property: "opacity"; duration: app.conf.animationDuration; } }
 
+    Connections {
+        target: map
+        onAutoCenterChanged: if (!map.autoCenter) setAutoRotate(false)
+    }
+
     onClicked: {
-        map.autoRotate = !map.autoRotate;
+        if (hidden) return;
+        if (!map.autoCenter) {
+            notification.flash(app.tr("Auto-rotation requires auto-centering to be enabled"),
+                               "northArrow");
+            return;
+        }
+        setAutoRotate(!map.autoRotate)
+    }
+
+    function setAutoRotate(ar) {
+        if (ar === map.autoRotate) return;
+        map.autoRotate = ar;
         notification.flash(map.autoRotate ?
                                app.tr("Auto-rotate on") :
                                app.tr("Auto-rotate off"),

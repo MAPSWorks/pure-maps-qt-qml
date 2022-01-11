@@ -24,8 +24,7 @@ Kirigami.FormLayout {
     anchors.leftMargin: styler.themeHorizontalPageMargin
     anchors.right: parent.right
     anchors.rightMargin: styler.themeHorizontalPageMargin
-    wideMode: width > Kirigami.Units.gridUnit * 25
-    Layout.preferredWidth: parent.width - 2*styler.themeHorizontalPageMargin
+    wideMode: false
     property bool isFormLayout: true
     property int  spacing // column compatibility
 }

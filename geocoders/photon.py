@@ -18,25 +18,21 @@
 """
 Geocoding using Photon.
 
-http://photon.komoot.de/
+https://photon.komoot.io/
 """
 
 import copy
 import poor
 import urllib.parse
 
-URL = "http://photon.komoot.de/api/?q={query}&limit={limit}&lang={lang}"
-URL_REVERSE = "http://photon.komoot.de/reverse?lon={lon}&lat={lat}&limit={limit}&lang={lang}&distance_sort=true"
+URL = "https://photon.komoot.io/api/?q={query}&limit={limit}&lang={lang}"
+URL_REVERSE = "https://photon.komoot.io/reverse?lon={lon}&lat={lat}&limit={limit}&lang={lang}&distance_sort=true"
 cache = {}
 
 def autocomplete(query, x=0, y=0, params={}):
     """Return a list of autocomplete dictionaries matching `query`."""
     if len(query) < 3: return []
-    key = "autocomplete:{}".format(query)
-    with poor.util.silent(KeyError):
-        return copy.deepcopy(cache[key])
     results = geocode(query=query, x=x, y=y, params=params)
-    cache[key] = copy.deepcopy(results)
     return results
 
 def geocode(query, x=0, y=0, params={}):

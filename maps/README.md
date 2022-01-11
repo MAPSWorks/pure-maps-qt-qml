@@ -63,8 +63,13 @@ to a JSON format style definition, or by writing the style definition
 into the JSON metadata file itself.
 
 * **`first_label_layer`**: Identifier of the lowest label layer in the
-  style. Icons and route polylines might rendered right below this layer
+  style. Icons and route polyline outlines will be rendered right below this layer
   so that labels are not obscured and remain readable.
+
+* **`first_route_layer`**: Identifier of the layer in the
+  style below which the route will be rendered. If not specified, it is
+  assumed to be the same as `first_label_layer`. Is used in practice to avoid
+  overlaying traffic information.
 
 * **`style_json`**: A full JSON format style definition.
 
@@ -75,6 +80,11 @@ into the JSON metadata file itself.
 * **`url_suffix`**: A suffix to add to all URL requests, including
   tiles, fonts, icons or whatever specified by the style. Usually used
   to provide an API key, token or some other identification.
+
+* **`fingerprint`**: A dictionary consisting of keys and the values
+  uniquely identifying the style. For example, `{ "id": "streets-v10" }`.
+  This is used when generating language-specific version of the
+  style by Pure Maps by replacing labels.
 
 [mapbox-style]: https://www.mapbox.com/mapbox-gl-js/style-spec/
 

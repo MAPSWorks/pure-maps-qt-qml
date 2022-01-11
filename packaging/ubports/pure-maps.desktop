@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=Pure Maps
-Exec=pure-maps %u
-Icon=pure-maps
-Type=Application
-MimeType=x-scheme-handler/geo
-X-Ubuntu-Touch=true
-

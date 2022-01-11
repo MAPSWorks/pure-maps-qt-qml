@@ -56,13 +56,14 @@ QtObject {
     // used icons
     property string iconAbout: "help-about-symbolic"
     property string iconBack: "go-previous-symbolic"
-    property string iconClear: "edit-clear-all-symbolic"
+    property string iconClear: "edit-delete-symbolic"
     property string iconClose: "window-close-symbolic"
     property string iconDelete: "edit-delete-symbolic"
     property string iconDot: "find-location-symbolic"
     property string iconDown: "go-down-symbolic"
     property string iconEdit: "document-edit-symbolic"
     property string iconEditClear: "edit-clear-symbolic"
+    property string iconEmail: "mail-unread-symbolic"
     property string iconFavorite: "bookmark-new-symbolic"
     property string iconFavoriteSelected: "user-bookmarks-symbolic"
     property string iconForward: "go-next-symbolic"
@@ -87,6 +88,7 @@ QtObject {
     property string iconShortlistedSelected: "shortlist-selected-symbolic"
     property string iconStart: "media-playback-start-symbolic"
     property string iconStop: "media-playback-stop-symbolic"
+    property string iconUp: "go-up-symbolic"
     property string iconWebLink: "web-browser-symbolic"
 
     // item sizes

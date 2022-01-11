@@ -23,41 +23,24 @@ Column {
     spacing: styler.themePaddingLarge
     width: parent.width
 
-    ValueButtonPL {
-        id: nameButton
-        label: app.tr("Name")
-        height: Math.max(styler.themeItemSizeSmall, implicitHeight)
-        value: ""
-        width: parent.width
-        onClicked: {
-            var dialog = app.pages.push(Qt.resolvedUrl("../guides/osmscout_name.qml"));
-            dialog.accepted.connect(function() {
-                nameButton.value = dialog.query;
-                page.params.name = dialog.query;
-                py.call_sync("poor.app.history.add_place_name", [dialog.query]);
-            });
-        }
-
-        Component.onCompleted: {
-            page.params.name = ""
-        }
-    }
-
     TextSwitchPL {
         id: routeSwitch
         anchors.left: parent.left
         anchors.right: parent.right
         checked: page.params.alongRoute!==undefined && page.params.alongRoute
         text: app.tr("Search along the route")
-        visible: map.hasRoute
+        visible: app.navigator.hasRoute
 
         function update() {
-            if (!map.hasRoute) {
+            if (!app.navigator.hasRoute) {
                 routeSwitch.checked = false;
             }
             if (routeSwitch.checked) {
                 page.params.alongRoute = true;
-                page.params.route = { "route_lng": map.route.x, "route_lat": map.route.y };
+                page.params.route = {
+                    "route_lng": navigator.route.map(function(x) { return x.longitude }),
+                    "route_lat": navigator.route.map(function(x) { return x.latitude }),
+                };
             } else {
                 page.params.alongRoute = false;
             }
@@ -74,7 +57,7 @@ Column {
         checked: page.params.fromReference!==undefined && page.params.fromReference
         description: app.tr("When set, the search along the route is performed starting from the point specified by 'Near' on this page") 
         text: app.tr("Search starting from the reference point")
-        visible: map.hasRoute && routeSwitch.checked
+        visible: app.navigator.hasRoute && routeSwitch.checked
 
         function update() {
             page.params.fromReference = fromRefSwitch.checked;

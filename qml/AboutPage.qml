@@ -55,7 +55,7 @@ PagePL {
         ListItemLabel {
             height: styler.themeItemSizeExtraSmall
             horizontalAlignment: Text.AlignHCenter
-            text: app.tr("version %1", py.evaluate("poor.__version__"))
+            text: app.tr("version %1", programVersion)
         }
 
         ListItemLabel {
@@ -78,7 +78,7 @@ PagePL {
                 font.pixelSize: styler.themeFontSizeSmall
                 height: implicitHeight
                 horizontalAlignment: Text.AlignRight
-                text: "2014–2018 Osmo Salomaa\n2018 Rinigus"
+                text: "2014–2018 Osmo Salomaa\n2018-2020 Rinigus"
             }
 
             ListItemLabel {

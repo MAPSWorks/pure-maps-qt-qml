@@ -17,7 +17,7 @@
  */
 
 import QtQuick 2.0
-import QtPositioning 5.3
+import QtPositioning 5.4
 import "."
 import "platform"
 
@@ -146,7 +146,8 @@ Item {
                 property bool currentPosition: model.type === "current position"
                 property bool setHeightToSmall: model.type === "poi" ||
                                                 model.type === "recent search" ||
-                                                model.type === "autocomplete"
+                                                model.type === "autocomplete" ||
+                                                model.type === "subquery"
                 property bool visited: model.visited
 
                 Column {
@@ -173,14 +174,14 @@ Item {
                         color: (listItem.highlighted || listItem.visited || !listItem.enabled) ?
                                    styler.themeHighlightColor : styler.themePrimaryColor
                         height: visible ? implicitHeight : 0
-                        text: model.markup ? model.markup : model.title
+                        text: (model.type === "subquery" ? "\u2794 " : "") + (model.markup ? model.markup : model.title)
                         textFormat: Text.StyledText
                         visible: !listItem.header && text
                     }
 
                     ListItemLabel {
                         //anchors.leftMargin: searchField.textLeftMargin
-                        color: styler.themeSecondaryColor
+                        color: listItem.highlighted ? styler.themeSecondaryHighlightColor : styler.themeSecondaryColor
                         font.pixelSize: styler.themeFontSizeExtraSmall
                         height: visible ? implicitHeight : 0
                         text: {
@@ -231,6 +232,14 @@ Item {
                         // No autocompletion, no POI, open results geo.
                         searchField.text = model.text;
                         fetchResults();
+                    } else if (model.type === "subquery"){
+                        var q = geo._resultDetails[model.detailId];
+                        if (!q) {
+                            console.log("GeocoderItem Unexpected result: " + model.detailId);
+                            return;
+                        }
+                        searchField.text = model.title;
+                        fetchResults(q.query);
                     } else {
                         console.log("Unknown type in Geocoder Item: " + model.type)
                     }
@@ -325,9 +334,11 @@ Item {
         if (!query || query === geo._prevAutocompleteQuery) return;
         geo._autocompletePending = true;
         geo._prevAutocompleteQuery = query;
-        var x = map.position.coordinate.longitude || 0;
-        var y = map.position.coordinate.latitude || 0;
-        py.call("poor.app.geocoder.autocomplete", [query, x, y], function(results) {
+        py.call("poor.app.geocoder.autocomplete",
+                gps.coordinateValid ? [query, gps.coordinate.longitude, gps.coordinate.latitude,
+                                       map.center.longitude, map.center.latitude] :
+                                      [query, 0, 0, map.center.longitude, map.center.latitude],
+                function(results) {
             if (!geo._autocompletePending) return;
 
             geo._autocompletePending = false;
@@ -343,19 +354,24 @@ Item {
         });
     }
 
-    function fetchResults() {
+    function fetchResults(queryStructure) {
         _searchIndex += 1;
         var mySearchIndex = _searchIndex;
+        var q = queryStructure ? queryStructure : query
         _searchPending = true;
         _searchDone = false;
         _searchHits = [];
         setSearchResults([]);
         _autocompletePending = false; // skip any ongoing autocomplete search
-        py.call_sync("poor.app.history.add_place", [query]);
-        var x = map.position.coordinate.longitude || 0;
-        var y = map.position.coordinate.latitude || 0;
-        geo.update();
-        py.call("poor.app.geocoder.geocode", [query, x, y, null], function(results) {
+        if (queryStructure == null) {
+            py.call_sync("poor.app.history.add_place", [query]);
+            geo.update();
+        }
+        py.call("poor.app.geocoder.geocode",
+                gps.coordinateValid ? [q, gps.coordinate.longitude, gps.coordinate.latitude,
+                                       map.center.longitude, map.center.latitude] :
+                                      [q, 0, 0, map.center.longitude, map.center.latitude],
+                function(results) {
             // skip, new search or autocomplete was started
             if (_searchIndex !== mySearchIndex || !_searchPending) return;
 
@@ -391,7 +407,8 @@ Item {
                 found.push({
                                "detailId": k,
                                "markup": p.label,
-                               "type": "autocomplete"
+                               "title": p.label,
+                               "type": p.poiType === "PM:Query" ? "subquery" : "autocomplete"
                            });
                 _resultDetails[k] = p;
             });
@@ -435,7 +452,7 @@ Item {
                                "title": p.title,
                                "description": p.description,
                                "distance": p.distance,
-                               "type": "result"
+                               "type": p.poiType === "PM:Query" ? "subquery" : "result"
                            });
                 _resultDetails[k] = p;
             });

@@ -1,3 +1,191 @@
+2021-11-22: Pure Maps 2.9.0
+===========================
+
+* Add support for HERE through dedicated profile
+* Add support for licenses
+* Add support for MapTiler
+* Add and fix Geoclue2 plugin [fix by tpikonen]
+* Set center of the map as a reference point for geocoders
+* Disable plugins with missing API keys or licenses
+* Indicate when routing has failed
+* Fix direction calculations used by positioning source
+* Allow to use system-wide Geomag [tpikonen]
+* Update Ubuntu Touch packaging [jonnius]
+* Try to activate map matching if requested
+* Allow to specify accuracy of positioning
+* Revise API keys handling
+* Update translations
+* Bugfixes
+* [2.9.2, sfos] Add Chum section to SPEC
+* [2.9.2, sfos] Fix My Backup configuration [Karry]
+
+2021-10-17: Pure Maps 2.8.0
+===========================
+
+* Add app-specific PositionSource
+* Add missing icons for navigation instructions [Lolek]
+* Add support for large number of languages by Valhalla
+* Drop support for Thunderforest maps
+* Adjust dependencies
+* Bugfixes and small enhancements
+* Update translations
+
+2021-05-22: Pure Maps 2.7.5
+===========================
+
+* Allow to specify default font provider
+* Require QtPositioning 5.4 and use Qt calculated direction
+* Update translations
+* [sfos] Adjust packaging for Jolla Store
+
+
+2021-04-09: Pure Maps 2.7
+=========================
+
+* Transition to CMake build system [PureTryOut]
+* Update Ubuntu Touch build scripts [jonnius]
+
+
+2021-03-30: Pure Maps 2.6.5
+===========================
+
+* Fix crash induced by absent location coordinates
+* Add OpenSlopeMap tiles provider [henning-schild]
+* Use DBus API introduced in 2.0 of OSM Scout Server
+* [ubuntu touch] Remove tmp in cache workaround [jonnius]
+* [ubuntu touch] Packaging improvements [jonnius]
+* Update license identifier [Newbyte]
+* Bugfixes
+* Update translations
+
+
+2021-02-20: Pure Maps 2.6
+=========================
+
+* Route manipulation through selection of point of interest on map
+* Use scrollable panel when showing data regarding points of interest
+* Show remaining distance and time to the upcoming waypoint on the main screen
+* Keep track on arrivals to intermediate waypoints
+* Bugfixes
+* Update translations
+
+2021-02-03: Pure Maps 2.5
+=========================
+
+* Allow to edit route
+* Quick route calculation through selection of point of interest
+* Better handling of some corner cases in routing
+* Refactor page stack implementation
+* Add support to Sailfish Harbour MyBackup [atlochowski]
+* Show waypoints and destinations using dedicated icons
+* Explicitly invoke python3 in check-json [Newbyte]
+* Bugfixes
+* Update translations
+
+2021-01-05: Pure Maps 2.4
+=========================
+
+* Add support for routing waypoints order optimization
+* Allow to see more routes from history
+* Adjust basemap selector
+* Handle type and name separately in nearby search
+* Switch default online geocoder to Photon
+* Improve MapQuest nearby search support
+* Navigation overview page adjustments
+* [2.4.0,2.4.1] Update translations
+* [2.4.1] Fix GPX routers
+
+2020-12-31: Pure Maps 2.3
+=========================
+
+* Add support for intermediate destinations and waypoints
+* Adjust naming of Ubuntu Touch platform [jonnius]
+* Adjust desktop and appdata to support PureOS Store [dos1]
+* Drop support for Digitransit router
+* Use text color to indicate interactive elements
+* Update translations
+
+2020-12-16: Pure Maps 2.2
+=========================
+
+* Show close consecutive maneuvers
+* Show roundabout exit number for supported routers
+* Fix maneuver icons for OSRM
+* Autohide buttons by default for new users
+* Reduce vertical requirements of navigation overview bar
+* Handle arrival to destination by switching to dedicated mode
+* Change DBus registration order
+* Rewrite imlpementation determining mode of the application
+* Update translations
+* Bugfixes, optimizations, and visual adjustments
+
+2020-11-26: Pure Maps 2.1
+=========================
+
+* Rewrite navigation guidance
+* Navigation direction is preferred for orienting the map
+* Switch off navigation mode on reaching destination
+* [kirigami,qtcontrols] Support inhibition of screensaver
+* Support for external control by DBus
+* [2.1.0,2.1.1] Update translations
+* Updated packaging for UBPorts [jonnius]
+* Matrix channel added
+
+2020-10-31: Pure Maps 2.0
+=========================
+
+* Switch to C++ main
+* Prevent voice navigation stopping other audio [research by Karry]
+* Allow to reverse GPX track
+* Refactor command line and DBus handling
+* Allow to specify default service providers
+* Update packaging scripts for new build system [ubports by jonnius]
+* [kirigami,qtcontrols] Add build-in clipboard support
+* Update translations
+
+2020-08-24: Pure Maps 1.29
+==========================
+
+* Show route using casing to reduce interference with traffic
+* Use Audio.NotificationRole for instructions
+* [ubports] Fix text update in POIs
+* [ubports] Add slim builds [jonnius]
+* [ubports] Update docs [jonnius]
+* [1.29.0, 1.29.1, 1.29.2] Update translations
+* [1.29.2] Update Photon URL
+
+2020-07-02: Pure Maps 1.28
+==========================
+
+* Distance formatted according to locale
+* Fix race condition while loading multi-language map styles
+* Fit to view route and found POIs, rearrange for margins changes
+* Rearrange properties and methods to improve code organization
+* Require Mapbox GL QML 1.7.0 or higher
+* [ubports] Switch to Mapbox GL Native upstream [jonnius]
+* [1.28.1] [ubports] fix pasting into search field [StefWe]
+* Bugfixes, smaller adjustments
+* [1.28.0,1.28.1] Update translations
+
+2020-05-27: Pure Maps 1.27
+==========================
+
+* Add support for compass
+* Correct for magnetic declination when using compass
+* Add support for navigation without screen
+* Rearrange preferences page
+* [ubports] Add support for GPX loading [StefWe]
+* [ubports] Update build config [jonnius]
+* [ubports] Packaging and documentation updates [jonnius]
+* [kirigami] Move main menu drawer to the right
+* [kirigami] Add support for dark themes
+* [kirigami,qtcontrols] Make slider touchscreen friendly
+* [kirigami] Disable wide layout in forms
+* [silica] Switch to KeepAlive 1.2
+* Bugfixes, smaller adjustments
+* [1.27.0, 1.27.1] Update translations
+* [1.27.2] Prepare for the update of Mapbox GL
+
 2019-10-04: Pure Maps 1.26
 ==========================
 

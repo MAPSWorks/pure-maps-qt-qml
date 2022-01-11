@@ -17,7 +17,7 @@
  */
 
 import QtQuick 2.0
-import QtPositioning 5.3
+import QtPositioning 5.4
 import QtGraphicalEffects 1.0
 
 import "js/util.js" as Util
@@ -26,11 +26,12 @@ MouseArea {
     id: master
     anchors.left: parent.left
     anchors.top: referenceBlockTopLeft.bottom
+    enabled: !hidden
     height: 2*(styler.themePaddingLarge + styler.themePaddingSmall) +
             (_rotate ? scaleBar.scaleBarMaxLength : scaleBar.height)
     states: [
         State {
-            when: (app.mode === modes.navigate || app.mode === modes.followMe) &&
+            when: (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost) &&
                   streetName.visible && streetName.x+streetName.width > x
             AnchorChanges {
                 target: master
@@ -41,7 +42,7 @@ MouseArea {
             }
         },
         State {
-            when: (app.mode === modes.navigate || app.mode === modes.followMe)
+            when: (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost)
             AnchorChanges {
                 target: master
                 anchors.bottom: referenceBlockBottomRight.top
@@ -55,13 +56,13 @@ MouseArea {
     visible: !app.modalDialog
     width: 2*(styler.themePaddingLarge + styler.themePaddingSmall) +
            (_rotate ? scaleBar.height : scaleBar.scaleBarMaxLength)
-    z: 400
+    z: 300
 
     property bool hidden: app.modalDialog || app.infoPanelOpen ||
                           (!_recentlyUpdated && map.cleanMode && !app.conf.mapModeCleanShowScale)
 
     property bool _recentlyUpdated: false
-    property bool _rotate: !((app.mode === modes.navigate || app.mode === modes.followMe) && !app.portrait)
+    property bool _rotate: !((app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost) && !app.portrait)
 
     Behavior on opacity { NumberAnimation { property: "opacity"; duration: app.conf.animationDuration; } }
 

@@ -152,10 +152,14 @@ function injectMatches(model, found, text, markup, properties) {
 
 function markDefault(providers, defpid) {
     // Edit the default provider's name in-place.
-    for (var i = 0; i < providers.length; i++)
+    for (var i = 0; i < providers.length; i++) {
         if (providers[i].pid === defpid)
             providers[i].name = (qsTranslate("", "%1 (default)")
                                  .arg(providers[i].name));
+        if (!providers[i].available)
+            providers[i].name = (qsTranslate("", "%1 (disabled)")
+                                 .arg(providers[i].name));
+    }
 
 }
 
@@ -194,8 +198,8 @@ function pointsToJson(points) {
 
 function polylineToJson(polyline) {
     // Return a shallow copy of points with coordinates unpacked.
-    if (!polyline.coordinates) return {};
     var data = shallowCopy(polyline);
+    if (!polyline.coordinates) return data;
     data.x = pluck(data.coordinates, "longitude");
     data.y = pluck(data.coordinates, "latitude");
     delete data.coordinates;

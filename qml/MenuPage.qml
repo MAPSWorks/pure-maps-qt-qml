@@ -17,7 +17,7 @@
  */
 
 import QtQuick 2.0
-import QtPositioning 5.3
+import QtPositioning 5.4
 import "."
 import "platform"
 
@@ -31,7 +31,7 @@ MenuDrawerPL {
         PageMenuItemPL {
             iconName: styler.iconAbout
             text: app.tr("About Pure Maps")
-            onClicked: app.push(Qt.resolvedUrl("AboutPage.qml"), {}, true)
+            onClicked: app.pushMain(Qt.resolvedUrl("AboutPage.qml"))
         }
     }
 
@@ -44,7 +44,7 @@ MenuDrawerPL {
         visible: app.mode === modes.followMe
         onClicked: {
             if (app.mode !== modes.followMe) return;
-            app.setModeExplore();
+            app.navigator.followMe = false;
             app.showMap();
         }
     }
@@ -74,18 +74,18 @@ MenuDrawerPL {
     }
 
     MenuDrawerItemPL {
-        enabled: gps.ready
+        enabled: gps.coordinateValid
         iconName: styler.iconShare
-        text: gps.ready ? app.tr("Share current position") : app.tr("Share current position (not ready)")
+        text: gps.coordinateValid ? app.tr("Share current position") : app.tr("Share current position (not ready)")
         onClicked: {
-            if (!gps.ready) return;
-            var y = gps.position.coordinate.latitude;
-            var x = gps.position.coordinate.longitude;
-            app.push(Qt.resolvedUrl("SharePage.qml"), {
-                         "coordinate": QtPositioning.coordinate(y, x),
-                         "title": app.tr("Share Current Position"),
-                         "poi": { "address": app.tr("Current position") }
-                     }, true);
+            if (!gps.coordinateValid) return;
+            var y = gps.coordinate.latitude;
+            var x = gps.coordinate.longitude;
+            app.pushMain(Qt.resolvedUrl("SharePage.qml"), {
+                             "coordinate": QtPositioning.coordinate(y, x),
+                             "title": app.tr("Share Current Position"),
+                             "poi": { "address": app.tr("Current position") }
+                         });
         }
     }
 
@@ -98,13 +98,14 @@ MenuDrawerPL {
     MenuDrawerItemPL {
         iconName: styler.iconPreferences
         text: app.tr("Preferences")
-        onClicked: app.push(Qt.resolvedUrl("PreferencesPage.qml"), {}, true)
+        onClicked: app.pushMain(Qt.resolvedUrl("PreferencesPage.qml"), {}, true)
     }
 
     MenuDrawerSubmenuPL {
         id: profiles
         iconName: {
-            if (app.conf.profile === "online") return styler.iconProfileOnline;
+            if (app.conf.profile === "online" || app.conf.profile === "HERE")
+                return styler.iconProfileOnline;
             if (app.conf.profile === "offline") return styler.iconProfileOffline;
             return styler.iconProfileMixed;
         }
@@ -120,6 +121,14 @@ MenuDrawerPL {
             checked: app.conf.profile === "offline"
             text: app.tr("Offline")
             onClicked: profiles.set("offline")
+        }
+
+        MenuDrawerSubmenuItemPL {
+            checked: app.conf.profile === "HERE"
+            enabled: available
+            text: available ? app.tr("HERE - Online") : app.tr("HERE (disabled)")
+            onClicked: if (available) profiles.set("HERE")
+            property bool available: py.evaluate("poor.key.has_here")
         }
 
         MenuDrawerSubmenuItemPL {

@@ -22,6 +22,11 @@ import "platform"
 StylerPL {
     id: styler
 
+    // blockPressed should never be specified in style nor defaults
+    property color  blockPressed: Qt.rgba(styler.blockBg.r*0.8 + styler.themeHighlightColor.r*0.2,
+                                          styler.blockBg.g*0.8 + styler.themeHighlightColor.g*0.2,
+                                          styler.blockBg.b*0.8 + styler.themeHighlightColor.b*0.2,
+                                          styler.blockBg.a*0.8 + styler.themeHighlightColor.a*0.2)
     property string fg                   // foreground color (scale bar, metrics)
     property string iconVariant          // type of icons, let empty for default version, "white" for white icons
     property real   indicatorSize: styler.themeIconSizeSmall*1.4142*(1 + 0.2) / 4 // indicator height and width - do not change in defaults or style
@@ -40,6 +45,7 @@ StylerPL {
     property string maneuver             // maneuver circle inner color
     property string position             // variant of position marker, set to "" for default
     property string positionUncertainty  // position marker uncertainty
+    property int    radius: styler.themePaddingMedium // shields radius - do not change in defaults or style
     property string route                // route color on the map. also used for maneuver markers
     property real   routeOpacity         // opacity of route
     property string shadowColor          // shadow color used on map buttons and panels

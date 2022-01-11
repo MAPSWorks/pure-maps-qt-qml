@@ -36,7 +36,29 @@ URL = ("http://open.mapquestapi.com/nominatim/v1/search.php"
        "&viewbox={xmin:.5f},{ymax:.5f},{xmax:.5f},{ymin:.5f}"
        "&accept-language={lang}")
 
+CATEGORY_URL = ("http://www.mapquestapi.com/search/v3/prediction"
+                "?key=" + poor.key.get("MAPQUEST_KEY") +
+                "&format=json"
+                "&q={query}"
+                "&collection=category")
+
+
+
 cache = {}
+
+def autocomplete_type(query, params=None):
+    """Return a list of autocomplete dictionaries matching `query`."""
+    if len(query) < 2: return []
+    query = urllib.parse.quote_plus(query)
+    url = CATEGORY_URL.format(**locals())
+    with poor.util.silent(KeyError):
+        return copy.deepcopy(cache[url])
+    results = poor.http.get_json(url)
+    results = poor.AttrDict(results)
+    results = [dict(label=r.displayString,
+                    sic=r.sic[0]) for r in results.results]
+    cache[url] = copy.deepcopy(results)
+    return results
 
 def append1(lst, dic, names):
     """Append the first found name in `dic` to `lst`."""
@@ -54,9 +76,9 @@ def get_bbox(x, y, radius):
     ymax = y + radius/y_m_per_deg
     return xmin, xmax, ymin, ymax
 
-def nearby(query, near, radius, params):
+def nearby(query_type, query_name, near, radius, params):
     """Return X, Y and a list of dictionaries of places matching `query`."""
-    query = urllib.parse.quote_plus(query)
+    query = urllib.parse.quote_plus(query_type + ' ' + query_name)
     x, y = prepare_point(near)
     xmin, xmax, ymin, ymax = get_bbox(x, y, radius)
     limit = params.get("limit", 50)

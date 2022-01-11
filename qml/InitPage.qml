@@ -24,13 +24,14 @@ PageEmptyPL {
     id: page
     title: "Pure Maps"
 
-    property bool mapboxKeyMissing: false
     property bool ready: false
+    property var  licensesMissing
+    property int  licenseIndex: -1
 
     BusyModal {
         id: busy
-        running: !py.ready
-        text: !py.ready ? app.tr("Initializing") : ""
+        running: true
+        text: app.tr("Initializing")
     }
 
     Connections {
@@ -40,26 +41,50 @@ PageEmptyPL {
             page.ready = true
             // initialize conf before anything else
             app.conf.initialize();
-            var k = py.call_sync("poor.key.get_mapbox_key", [])
-            if (k == "EMPTY") {
+            // check licenses
+            licensesMissing = py.call_sync("poor.key.get_licenses_missing", [])
+            // check font provider
+            app.conf.set("font_provider", defaultFontProvider);
+            var hasMapboxKey = py.evaluate("poor.key.has_mapbox")
+            var hasMaptilerKey = py.evaluate("poor.key.has_maptiler")
+            if ( (defaultFontProvider === "mapbox" && !hasMapboxKey) ||
+                 (defaultFontProvider === "maptiler" && !hasMaptilerKey) ) {
+                var provider = (defaultFontProvider === "mapbox") ? "Mapbox" : "MapTiler"
                 var d = app.push(Qt.resolvedUrl("MessagePage.qml"), {
-                                     "acceptText": app.tr("Dismiss"),
-                                     "title": app.tr("Missing Mapbox key"),
-                                     "message": app.tr("Your installation is missing Mapbox API key. " +
-                                                       "Please register at Mapbox and fill in your personal API key " +
-                                                       "in Preferences. This key is not needed if you plan to use " +
-                                                       "Pure Maps with the offline map provider.")
-                                 });
-                mapboxKeyMissing = true;
-            } else start();
+                             "acceptText": app.tr("Dismiss"),
+                             "title": app.tr("Missing %1 key", provider),
+                             "message": app.tr("Your installation is missing %1 API key. " +
+                                               "Please register at %1 and fill in your personal API key " +
+                                               "in Preferences. This key is not needed if you plan to use " +
+                                               "Pure Maps with the offline map provider.", provider)
+                         });
+                d.Component.destruction.connect(showNextLicense)
+                app.fontKeyMissing = true;
+            } else if (licensesMissing.length > 0) {
+                showNextLicense();
+            } else {
+                start();
+            }
         }
     }
 
-    onPageStatusActive: if (page.ready) start()
+    function showNextLicense() {
+        licenseIndex += 1;
+        if (licenseIndex < licensesMissing.length) {
+            app.pages.completeAnimation();
+            var d = app.push(Qt.resolvedUrl("LicensePage.qml"), {
+                         "title": licensesMissing[licenseIndex].title,
+                         "key": licensesMissing[licenseIndex].id,
+                         "text": licensesMissing[licenseIndex].text
+                     });
+            d.Component.destruction.connect(showNextLicense)
+        } else start();
+    }
 
     function start() {
-        app.rootPage = app.pages.replace(Qt.resolvedUrl("RootPage.qml"));
-        app.initialize();
-        if (mapboxKeyMissing) app.showMenu();
+        py.call("poor.app.initialize", [], function () {
+            busy.running = false
+            app.rootPage = app.pages.replace(Qt.resolvedUrl("RootPage.qml"));
+        });
     }
 }

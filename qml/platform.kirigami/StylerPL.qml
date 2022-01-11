@@ -39,14 +39,10 @@ QtObject {
     property string navigationIconsVariant: darkTheme ? "white" : "black"
     // descriptive items
     property color themeHighlightColor: Kirigami.Theme.textColor
-    // due to https://bugreports.qt.io/browse/QTBUG-53189
-    // we cannot use Kirigami palette on links
-    // navigation items (to be clicked). When getting link colors,
-    // those are rather pale and hard to see. Swapping to
-    // regular text color
-    property color themePrimaryColor: palette.text
+    // navigation items, primary
+    property color themePrimaryColor: Kirigami.Theme.linkColor
     // navigation items, secondary
-    property color themeSecondaryColor: inactivePalette.text
+    property color themeSecondaryColor: Kirigami.Theme.visitedLinkColor
     // descriptive items, secondary
     property color themeSecondaryHighlightColor: Kirigami.Theme.disabledTextColor
 
@@ -61,13 +57,14 @@ QtObject {
     // used icons
     property string iconAbout: "help-about-symbolic"
     property string iconBack: "go-previous-symbolic"
-    property string iconClear: "edit-clear-all-symbolic"
+    property string iconClear: "edit-delete-symbolic"
     property string iconClose: "window-close-symbolic"
     property string iconDelete: "edit-delete-symbolic"
     property string iconDot: "find-location-symbolic"
     property string iconDown: "go-down-symbolic"
     property string iconEdit: "document-edit-symbolic"
     property string iconEditClear: "edit-clear-symbolic"
+    property string iconEmail: "mail-unread-symbolic"
     property string iconFavorite: "bookmark-new-symbolic"
     property string iconFavoriteSelected: "user-bookmarks-symbolic"
     property string iconForward: "go-next-symbolic"
@@ -92,6 +89,7 @@ QtObject {
     property string iconShortlistedSelected: "shortlist-selected-symbolic"
     property string iconStart: "media-playback-start-symbolic"
     property string iconStop: "media-playback-stop-symbolic"
+    property string iconUp: "go-up-symbolic"
     property string iconWebLink: "web-browser-symbolic"
 
     // item sizes

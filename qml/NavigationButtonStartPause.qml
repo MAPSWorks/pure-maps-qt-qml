@@ -27,7 +27,7 @@ MapButton {
     iconSource: {
         if (app.mode === modes.followMe)
             return app.getIcon("icons/navigation-stop");
-        if (app.mode === modes.navigate)
+        if (app.mode === modes.navigate || app.mode === modes.navigatePost)
             return app.getIcon("icons/navigation-pause");
         return app.getIcon("icons/navigation-start");
     }
@@ -44,17 +44,22 @@ MapButton {
     transitions: Transition {
         AnchorAnimation { duration: app.conf.animationDuration; }
     }
-    visible: app.mode === modes.exploreRoute || app.mode === modes.navigate || app.mode === modes.followMe
+    visible: app.mode === modes.exploreRoute || app.mode === modes.navigate ||
+             app.mode === modes.navigatePost || app.mode === modes.followMe
     y: {
-        var p = parent.height/2 - (navigationButtonClear.visible ? height : height/2);
+        var needed = (navigationButtonClear.visible ? 2*height : height);
+        var p = parent.height/2 - needed/2;
+        var proposed = p;
         if (scaleBar.opacity > 1e-5 && p < scaleBar.y + scaleBar.height && scaleBar.x < anchors.leftMargin + width)
-            return scaleBar.y + scaleBar.height;
-        if (p < attributionButton.y + attributionButton.height &&
+            proposed = scaleBar.y + scaleBar.height;
+        else if (p < attributionButton.y + attributionButton.height &&
                 attributionButton.x < anchors.leftMargin + width)
-            return attributionButton.y + attributionButton.height;
-        if (p < referenceBlockTopLeft.y + referenceBlockTopLeft.height)
-            return referenceBlockTopLeft.y + referenceBlockTopLeft.height;
-        return p;
+            proposed = attributionButton.y + attributionButton.height;
+        else if (p < referenceBlockTopLeft.y + referenceBlockTopLeft.height)
+            proposed = referenceBlockTopLeft.y + referenceBlockTopLeft.height;
+        if (proposed + needed < parent.height)
+            return proposed; // buttons fit
+        return p; // have to draw buttons over other elements
     }
     z: 900
 
@@ -63,16 +68,16 @@ MapButton {
         if (app.mode === modes.followMe) {
             notification.flash(app.tr("Stopped to follow the movement"),
                                notifyId);
-            app.setModeExplore();
+            app.navigator.followMe = false;
             app.resetMenu();
-        } else if (app.mode === modes.navigate) {
+        } else if (app.mode === modes.navigate || app.mode === modes.navigatePost) {
             notification.flash(app.tr("Navigation paused"),
                                notifyId);
-            app.setModeExploreRoute();
+            app.navigator.running = false;
         } else {
             notification.flash(app.tr("Navigation started"),
                                notifyId);
-            app.setModeNavigate();
+            app.navigator.running = true;
         }
     }
 

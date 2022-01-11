@@ -170,72 +170,86 @@ def find_closest(xs, ys, x, y, subset=None):
             min_dist = dist
     return min_index
 
-def format_distance(meters, n=2, short=True):
+def format_decimal(value, n=0, lang=None):
+    """Format decimal to `n` significant digits"""
+    # All language designations as used by routers
+    decimal = {
+        "ca": ",",
+        "cs": ",",
+        "cz": ",",
+        "de": ",",
+        "de_DE": ",",
+        "en": ".",
+        "en_GB": ".",
+        "en_US": ".",
+        "en-US-x-pirate": ".",
+        "es": ",",
+        "es_ES": ",",
+        "es_MX": ".",
+        "fr": ",",
+        "fr_CA": ",",
+        "fr_FR": ",",
+        "hi": ".",
+        "it": ",",
+        "pt": ",",
+        "ru": ",",
+        "ru_RU": ",",
+        "sl": ",",
+        "sv": ",",
+        }
+
+    if (n > 0):
+        ndigits = n - get_ndigits(value)
+    else:
+        ndigits = 0
+    value = round(value, ndigits)
+    if lang is not None:
+        result = "{{:.{:d}f}}".format(max(0, ndigits)).format(value)
+        return result.replace('.', decimal.get(lang, '.'))
+    return locale.format_string("%.{:d}f".format(max(0, ndigits)), value)
+
+def format_distance(meters, n=2, short=True, lang=None):
     """Format `meters` to `n` significant digits and unit label."""
     if not math.isfinite(meters):
         return ""
     if poor.conf.units == "american":
         feet = 3.28084 * meters
-        return format_distance_american(feet, n, short)
+        return format_distance_american(feet, n, short, lang)
     if poor.conf.units == "british":
         yards = 1.09361 * meters
-        return format_distance_british(yards, n, short)
-    return format_distance_metric(meters, n, short)
+        return format_distance_british(yards, n, short, lang)
+    return format_distance_metric(meters, n, short, lang)
 
-def format_distance_american(feet, n=2, short=True):
+def format_distance_american(feet, n=2, short=True, lang=None):
     """Format `feet` to `n` significant digits and unit label."""
     if (n > 1 and feet >= 1000) or feet >= 5280:
-        distance = feet / 5280
-        ndigits = n - get_ndigits(distance)
-        ndigits = max(0, ndigits)
-        distance = round(distance, ndigits)
-        distance = "{{:.{:d}f}}".format(max(0, ndigits)).format(distance)
+        distance = format_decimal(feet / 5280, 0, lang)
         units = _("mi") if short else _("miles")
         return "{distance} {units}".format(**locals())
     else:
-        distance = feet
-        ndigits = n - get_ndigits(distance)
-        ndigits = min(0, ndigits)
-        distance = round(distance, ndigits)
-        distance = "{{:.{:d}f}}".format(max(0, ndigits)).format(distance)
+        distance = format_decimal(feet, n, lang)
         units = _("ft") if short else _("feet")
         return "{distance} {units}".format(**locals())
 
-def format_distance_british(yards, n=2, short=True):
+def format_distance_british(yards, n=2, short=True, lang=None):
     """Format `yards` to `n` significant digits and unit label."""
     if (n > 1 and yards >= 400) or yards >= 1760:
-        distance = yards / 1760
-        ndigits = n - get_ndigits(distance)
-        ndigits = max(0, ndigits)
-        distance = round(distance, ndigits)
-        distance = "{{:.{:d}f}}".format(max(0, ndigits)).format(distance)
+        distance = format_decimal(yards / 1760, 0, lang)
         units = _("mi") if short else _("miles")
         return "{distance} {units}".format(**locals())
     else:
-        distance = yards
-        ndigits = n - get_ndigits(distance)
-        ndigits = min(0, ndigits)
-        distance = round(distance, ndigits)
-        distance = "{{:.{:d}f}}".format(max(0, ndigits)).format(distance)
+        distance = format_decimal(yards, n, lang)
         units = _("yd") if short else _("yards")
         return "{distance} {units}".format(**locals())
 
-def format_distance_metric(meters, n=2, short=True):
+def format_distance_metric(meters, n=2, short=True, lang=None):
     """Format `meters` to `n` significant digits and unit label."""
     if meters >= 1000:
-        distance = meters / 1000
-        ndigits = n - get_ndigits(distance)
-        ndigits = max(0, ndigits)
-        distance = round(distance, ndigits)
-        distance = "{{:.{:d}f}}".format(max(0, ndigits)).format(distance)
+        distance = format_decimal(meters / 1000, 0, lang)
         units = _("km") if short else _("kilometers")
         return "{distance} {units}".format(**locals())
     else:
-        distance = meters
-        ndigits = n - get_ndigits(distance)
-        ndigits = min(0, ndigits)
-        distance = round(distance, ndigits)
-        distance = "{{:.{:d}f}}".format(max(0, ndigits)).format(distance)
+        distance = format_decimal(meters, n, lang)
         units = _("m") if short else _("meters")
         return "{distance} {units}".format(**locals())
 
@@ -262,7 +276,7 @@ def format_location_olc(x, y):
 def format_location_message(x, y, extra_text, html=False, extra=True, osm=True, gmaps=False):
     """Format coordinates of a point into a location message."""
     if osm: osm_url = short_osm(y,x)
-    if gmaps: gm = 'http://maps.google.com/?q={y:.5f},{x:.5f}'.format(x=x, y=y)
+    if gmaps: gm = 'https://maps.google.com/?q={y:.5f},{x:.5f}'.format(x=x, y=y)
     plus = olc_encode(y,x)
     if html:
         if extra_text and extra: r = extra_text + '<br>'
@@ -359,8 +373,16 @@ def _get_providers(directory, default, active, profile):
             provider["pid"] = pid
             provider["default"] = matches(pid, default)
             provider["active"] = matches(pid, active)
+            # check for availability
+            available = True
+            for k in provider.get("keys", []):
+                v = poor.key.get(k).strip()
+                if not v:
+                    print('API key missing:', k, 'disabling', pid)
+                    available = False
+            provider["available"] = available
             providers.append(provider)
-    providers.sort(key=lambda x: x["name"])
+    providers.sort(key=lambda x: (not x["available"], x["name"]))
     return providers
 
 def get_routers():
@@ -405,11 +427,11 @@ def short_osm(lat, lon, zoom=16):
     Provide coordinates and optional zoom level. e.g.:
 
     >>> short_osm(50.671530961990356, 6.09715461730957)
-    http://osm.org/go/0GAjIv8h
+    https://osm.org/go/0GAjIv8h
     >>> short_osm(0, 0, 3)
-    http://osm.org/go/wAAA--
+    https://osm.org/go/wAAA--
     >>> short_osm(0, 0, 4)
-    http://osm.org/go/wAAA
+    https://osm.org/go/wAAA
     """
     # OSM short link, from https://gist.github.com/mdornseif/5652824
     # osm_shortlink.py - MAximillian Dornseif 2013 - Public Domain
@@ -450,7 +472,7 @@ def short_osm(lat, lon, zoom=16):
           c = (c << 1) | ((y >> i) & 1)
         return c
 
-    return 'http://osm.org/go/' + _encode(lat, lon, zoom) + "?m"
+    return 'https://osm.org/go/' + _encode(lat, lon, zoom) + "?m"
 
 def path2uri(path):
     """Convert local filepath to URI."""
@@ -483,7 +505,7 @@ def read_gpx(path):
               file=sys.stderr)
         raise # Exception
     return x, y
-    
+
 def read_json(path):
     """Read data from JSON file at `path`."""
     try:

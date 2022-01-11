@@ -17,7 +17,7 @@
  */
 
 import QtQuick 2.0
-import QtPositioning 5.3
+import QtPositioning 5.4
 import "."
 
 Item {
@@ -28,7 +28,8 @@ Item {
     property var  positionShown
 
     property bool _animatePosition: app.conf.smoothPositionAnimationWhenNavigating &&
-                                    (app.mode === modes.navigate || app.mode === modes.followMe)
+                                    (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost) &&
+                                    map.animationTime > 0
 
     readonly property var images: QtObject {
         readonly property string moving: "pure-position-moving"
@@ -45,28 +46,39 @@ Item {
 
     CoordinateAnimation {
         id: animate
-        duration: marker._animatePosition ? map.animationTime : 0
+        duration: map.animationTime
         easing.type: Easing.Linear
         target: marker
         property: "positionShown"
+        property bool initialized: false
     }
 
     Connections {
         target: map
-        onDirectionChanged: marker.updateDirection();
+        onDirectionChanged: marker.updateDirection()
         onMetersPerPixelChanged: marker.updateUncertainty()
-        onPositionChanged: {
+    }
+
+    Connections {
+        target: gps
+        onReadyChanged: marker.updateVisibility()
+        onPositionUpdated: {
+            if (!gps.coordinateValid) return;
             if (!positionShown || !marker._animatePosition) {
-                positionShown = QtPositioning.coordinate(map.position.coordinate.latitude, map.position.coordinate.longitude);
-                marker.position = QtPositioning.coordinate(map.position.coordinate.latitude, map.position.coordinate.longitude);
-                animate.to = marker.position;
+                positionShown = QtPositioning.coordinate(gps.coordinate.latitude, gps.coordinate.longitude);
+                marker.position = QtPositioning.coordinate(gps.coordinate.latitude, gps.coordinate.longitude);
             } else {
                 animate.complete();
+                if (!animate.initialized) {
+                    animate.from = QtPositioning.coordinate(gps.coordinate.latitude, gps.coordinate.longitude);
+                    animate.to = QtPositioning.coordinate(gps.coordinate.latitude, gps.coordinate.longitude);
+                    animate.initialized = true;
+                }
                 marker.position = animate.to;
                 animate.from = QtPositioning.coordinate(marker.position.latitude, marker.position.longitude);
-                animate.to = QtPositioning.coordinate(map.position.coordinate.latitude, map.position.coordinate.longitude);
+                animate.to = QtPositioning.coordinate(gps.coordinate.latitude, gps.coordinate.longitude);
                 animate.start();
-                marker.position = QtPositioning.coordinate(map.position.coordinate.latitude, map.position.coordinate.longitude);
+                marker.position = QtPositioning.coordinate(gps.coordinate.latitude, gps.coordinate.longitude);
             }
         }
     }
@@ -77,6 +89,13 @@ Item {
         marker.configureLayers();
         marker.updateDirection();
         marker.updateUncertainty();
+        marker.updateVisibility();
+    }
+
+    on_AnimatePositionChanged: {
+        if (!_animatePosition) {
+            animate.initialized = false;
+        }
     }
 
     onPositionShownChanged: {
@@ -102,7 +121,7 @@ Item {
             map.setLayoutProperty(marker.layers.still, "visibility", "none");
             map.setLayoutProperty(marker.layers.moving, "visibility", "visible");
             marker.directionVisible = true;
-        } else if (map.direction===undefined) {
+        } else {
             map.setLayoutProperty(marker.layers.still, "visibility", "visible");
             map.setLayoutProperty(marker.layers.moving, "visibility", "none");
             marker.directionVisible = false;
@@ -121,7 +140,7 @@ Item {
     }
 
     function initLayers() {
-        map.addSourcePoint(marker.source, map.position.coordinate);
+        map.addSourcePoint(marker.source, gps.coordinate);
         map.addLayer(marker.layers.layerUncertainty,
                      {"type": "circle", "source": marker.source},
                      map.firstLabelLayer);
@@ -144,10 +163,15 @@ Item {
     }
 
     function updateUncertainty() {
-        if (map.position.horizontalAccuracyValid)
+        if (gps.horizontalAccuracyValid)
             map.setPaintProperty(marker.layers.layerUncertainty, "circle-radius",
-                                 map.position.horizontalAccuracy / map.metersPerPixel / map.pixelRatio);
+                                 gps.horizontalAccuracy / map.metersPerPixel / map.pixelRatio);
         else
             map.setPaintProperty(marker.layers.layerUncertainty, "circle-radius", 0);
+    }
+
+    function updateVisibility() {
+        map.setLayoutProperty(marker.layers.still, "icon-opacity", gps.ready ? 1.0 : 0.6);
+        map.setLayoutProperty(marker.layers.moving, "icon-opacity", gps.ready ? 1.0 : 0.6);
     }
 }

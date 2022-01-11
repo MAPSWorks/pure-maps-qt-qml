@@ -1,6 +1,6 @@
 /* -*- coding: utf-8-unix -*-
  *
- * Copyright (C) 2018-2019 Rinigus, 2019 Purism SPC
+ * Copyright (C) 2018-2020 Rinigus, 2019 Purism SPC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,18 +36,26 @@ Kirigami.ApplicationWindow {
                                                        Kirigami.ApplicationHeaderStyle.ShowBackButton :
                                                        Kirigami.ApplicationHeaderStyle.NoNavigationButtons
 
+    property real   compassOrientationOffset: 0
     property bool   isConvergent: true
     property var    initialPage
     property string menuPageUrl
     property var    pages: StackPL { }
-    property bool   running: visible
+    property bool   running: visible || keepAliveBackground
     property int    screenHeight: height
     property bool   screenLarge: false
     property int    screenWidth: width
-    property bool   keepAlive: false // not used - desktop is not expected to be falling asleep
+    property bool   keepAlive: false
+    property bool   keepAliveBackground: false // not used
 
     // hide from Kirigami
     default property var _content
+
+    ScreenSaver {
+        name: "Pure Maps"
+        preventBlanking: active && keepAlive
+        reason: "Showing Maps"
+    }
 
     Settings {
         property alias x: appWindow.x
@@ -65,19 +73,12 @@ Kirigami.ApplicationWindow {
         appWindow.raise();
     }
 
-    function clearPages() {
-        // called when we need to drop all pages
-        // except the page with a map and start
-        // adding new ones
-
-        // this implementation takes into account
-        // we clear pages when we get to page 0
-        app.pages.ps.currentIndex = 0;
-    }
-
     function initPages() {
         if (menuPageUrl) {
             globalDrawer = app.createObject(menuPageUrl);
+            globalDrawer.edge = Qt.RightEdge;
+            globalDrawer.clip = true;
+            globalDrawer.enabled = Qt.binding(function () { return pages.currentIndex === 0; })
         }
     }
 

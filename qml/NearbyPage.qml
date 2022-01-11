@@ -27,13 +27,13 @@ PagePL {
     acceptIconName: styler.iconNearby
     acceptText: app.tr("Search")
     canNavigateForward: page.near &&
-                        (page.nearText !== app.tr("Current position") || gps.ready) &&
-                        page.query.length > 0
+                        (page.nearText !== app.tr("Current position") || gps.coordinateValid) &&
+                        (page.queryType.length > 0 || page.queryName.length > 0)
 
     pageMenu: PageMenuPL {
         PageMenuItemPL {
             iconName: styler.iconPreferences
-            text: app.tr("Using %1").arg(name)
+            text: app.tr("Change provider (%1)").arg(name)
             property string name: py.evaluate("poor.app.guide.name")
             onClicked: {
                 var dialog = app.push(Qt.resolvedUrl("GuidePage.qml"));
@@ -48,7 +48,8 @@ PagePL {
     property bool   initialized: false
     property alias  near: nearButton.coordinates
     property alias  nearText: nearButton.text
-    property string query: ""
+    property string queryType: ""
+    property string queryName: ""
     property var    params: {}
     property real   radius: 1000
 
@@ -104,13 +105,30 @@ PagePL {
             id: typeButton
             label: app.tr("Type")
             height: Math.max(styler.themeItemSizeSmall, implicitHeight)
-            value: page.query
+            value: page.queryType
             // Avoid putting label and value on different lines.
             width: 3 * parent.width
             onClicked: {
-                var dialog = app.push(Qt.resolvedUrl("PlaceTypePage.qml"));
+                var dialog = app.push(Qt.resolvedUrl("PlaceTypePage.qml"),
+                                      {"query": queryType});
                 dialog.accepted.connect(function() {
-                    page.query = dialog.query;
+                    page.queryType = dialog.query;
+                });
+            }
+        }
+
+        ValueButtonPL {
+            id: nameButton
+            label: app.tr("Name")
+            height: Math.max(styler.themeItemSizeSmall, implicitHeight)
+            value: page.queryName
+            // Avoid putting label and value on different lines.
+            width: 3 * parent.width
+            onClicked: {
+                var dialog = app.push(Qt.resolvedUrl("PlaceNamePage.qml"),
+                                      {"query": queryName});
+                dialog.accepted.connect(function() {
+                    page.queryName = dialog.query;
                 });
             }
         }
@@ -124,7 +142,13 @@ PagePL {
             var uri = Qt.resolvedUrl(py.evaluate("poor.app.guide.settings_qml_uri"));
             if (!uri) return;
             var component = Qt.createComponent(uri);
+            if (component.status === Component.Error) {
+                console.log('Error while creating component');
+                console.log(component.errorString());
+                return null;
+            }
             column.settings = component.createObject(column);
+            if (!column.settings) return;
             column.settings.anchors.left = column.left;
             column.settings.anchors.right = column.right;
             column.settings.width = column.width;
@@ -133,25 +157,25 @@ PagePL {
 
     Component.onCompleted: {
         if (!page.near) {
-            page.near = map.getPosition();
+            page.near = app.getPosition();
             page.nearText = app.tr("Current position");
         }
     }
 
-    onQueryChanged: {
-        py.call_sync("poor.app.history.add_place_type", [page.query]);
-    }
+    onQueryTypeChanged: py.call_sync("poor.app.history.add_place_type", [page.queryType])
+    onQueryNameChanged: py.call_sync("poor.app.history.add_place_name", [page.queryName])
 
     onPageStatusActive: {
+        var resultPage;
         if (!initialized) {
-            var resultPage = app.pushAttachedMain(Qt.resolvedUrl("NearbyResultsPage.qml"));
+            resultPage = app.pushAttachedMain(Qt.resolvedUrl("NearbyResultsPage.qml"));
             resultPage.populated = false;
             initialized = true;
         }
 
         if (page.nearText === app.tr("Current position"))
-            page.near = map.getPosition();
-        var resultPage = app.pages.nextPage();
+            page.near = app.getPosition();
+        resultPage = app.pages.nextPage();
         if (resultPage) resultPage.populated = false;
     }
 

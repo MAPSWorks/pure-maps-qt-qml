@@ -28,7 +28,7 @@ MouseArea {
     height: styler.themeIconSizeSmall
     states: [
         State {
-            when: app.mode===modes.navigate && !app.portrait
+            when: app.mode===modes.navigate
             AnchorChanges {
                 target: attributionButton
                 anchors.left: referenceBlockTopLeft.right
@@ -40,7 +40,7 @@ MouseArea {
             }
         },
         State {
-            when: scaleBar.opacity < 1e-5 || app.mode === modes.navigate || app.mode === modes.followMe
+            when: scaleBar.opacity < 1e-5 || app.mode === modes.followMe || app.mode === modes.navigatePost
             AnchorChanges {
                 target: attributionButton
                 anchors.left: parent.left
@@ -54,7 +54,7 @@ MouseArea {
 
     ]
     width: extra.width + main.width
-    z: 500
+    z: 100
 
     property string logo: ""
 
@@ -105,6 +105,6 @@ MouseArea {
     onLogoChanged: extra.setSource()
 
     function pushPage() {
-        app.push(Qt.resolvedUrl("AttributionPage.qml"), {}, true);
+        app.push(Qt.resolvedUrl("AttributionPage.qml"));
     }
 }

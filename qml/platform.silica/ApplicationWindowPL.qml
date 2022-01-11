@@ -1,6 +1,6 @@
 /* -*- coding: utf-8-unix -*-
  *
- * Copyright (C) 2018 Rinigus
+ * Copyright (C) 2018-2020 Rinigus
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@
 
 import QtQuick 2.0
 import Sailfish.Silica 1.0
-import Nemo.KeepAlive 1.1
+import Nemo.KeepAlive 1.2
 import "."
 
 ApplicationWindow {
@@ -27,19 +27,28 @@ ApplicationWindow {
     cover: Cover {}
     initialPage: null
 
+    property real   compassOrientationOffset: 0
     property string menuPageUrl
     property var    pages: StackPL { }
-    property bool   running: applicationActive || (cover && cover.active)
+    property bool   running: applicationActive || (cover && cover.active) || keepAliveBackground
     property int    screenHeight: Screen.height
     property bool   screenLarge: Screen.sizeCategory >= Screen.Large
     property int    screenWidth: Screen.width
     property string title
     property bool   keepAlive: false
+    property bool   keepAliveBackground: false
+
+    DisplayBlanking {
+        preventBlanking: applicationActive && keepAlive
+    }
+
+    KeepAlive {
+        enabled: keepAliveBackground
+    }
 
     Component.onCompleted: {
         pages.ps = pageStack;
         updateOrientation()
-        DisplayBlanking.preventBlanking = Qt.binding(function() { return applicationActive && keepAlive })
     }
 
     Keys.onPressed: {
@@ -49,11 +58,6 @@ ApplicationWindow {
     }
 
     onDeviceOrientationChanged: updateOrientation()
-
-    function clearPages() {
-        // not used in the platforms with menu shown
-        // as a page in a stack
-    }
 
     function initPages() {
     }
@@ -78,18 +82,22 @@ ApplicationWindow {
         if (!(deviceOrientation & allowedOrientations)) return;
         switch (deviceOrientation) {
         case Orientation.Portrait:
+            compassOrientationOffset = 0;
             screenWidth = Screen.width;
             screenHeight = Screen.height;
             break;
         case Orientation.PortraitInverted:
+            compassOrientationOffset = 180;
             screenWidth = Screen.width;
             screenHeight = Screen.height;
             break;
         case Orientation.Landscape:
+            compassOrientationOffset = 90;
             screenWidth = Screen.height;
             screenHeight = Screen.width;
             break;
         case Orientation.LandscapeInverted:
+            compassOrientationOffset = 270;
             screenWidth = Screen.height;
             screenHeight = Screen.width;
             break;

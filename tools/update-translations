@@ -21,6 +21,16 @@ xgettext --output=po/pure-maps.pot \
          --add-comments=TRANSLATORS: \
          */*.qml qml/js/*.js
 
+# C++ code
+xgettext --output=po/pure-maps.pot \
+         --join-existing \
+         --from-code=UTF-8 \
+         --language=C++ \
+         --keyword=translate:2 \
+         --keyword=trans:1 \
+         --add-comments=TRANSLATORS: \
+         src/*.cpp
+
 # JSON metadata
 cat */*.json \
     | grep '^ *"_' \

@@ -17,7 +17,9 @@
  */
 
 import QtQuick 2.0
-import QtMultimedia 5.2
+import QtMultimedia 5.6
+import QtPositioning 5.4
+import org.puremaps 1.0
 import "."
 import "platform"
 
@@ -28,11 +30,16 @@ ApplicationWindowPL {
     title: app.tr("Pure Maps")
 
     keepAlive: app.conf.keepAlive === "always"
-               || (app.conf.keepAlive === "navigating" && (app.mode === modes.navigate || app.mode === modes.followMe))
+               || (app.conf.keepAlive === "navigating" &&
+                   (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost))
+
+    keepAliveBackground: app.conf.keepAliveBackground === "always"
+                        || (app.conf.keepAliveBackground === "navigating" &&
+                            (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost))
 
     property var    conf: Config {}
     property bool   errorPageOpen: false
-    property bool   hasMapMatching: false
+    property bool   fontKeyMissing: false
     property bool   initialized: false
     property bool   infoActive: infoPanel && infoPanel.infoText
     property var    infoPanel: null
@@ -43,25 +50,39 @@ ApplicationWindowPL {
     // and the associated constant Theme.itemSizeSmall.
     property real   listItemVerticalMargin: (styler.themeItemSizeSmall - 1.125 * styler.themeFontSizeMedium) / 2
     property var    map: null
-    property string mapMatchingMode: "none"
+    property string mapMatchingMode: {
+        if (app.mode === modes.navigate || app.mode === modes.followMe || app.mode === modes.navigatePost)
+            return (app.conf.mapMatchingWhenNavigating && map && app.transportMode) ?
+                        app.transportMode : "none";
+        return app.conf.mapMatchingWhenIdle;
+    }
     property bool   modalDialog: modalDialogBasemap
     property bool   modalDialogBasemap: false
-    property int    mode: modes.explore
+    property int    mode: {
+        if (navigator) {
+            if (navigator.running && navigator.destReached) return modes.navigatePost;
+            if (navigator.running) return modes.navigate;
+            if (navigator.followMe) return modes.followMe;
+            if (navigator.hasRoute) return modes.exploreRoute;
+        }
+        return modes.explore;
+    }
     property bool   narrativePageSeen: false
-    property var    navigationStatus: NavigationStatus {}
-    property bool   navigationStarted: false
+    property var    navigator: null
     property var    notification: null
     property var    pois: null
     property bool   poiActive: false
     property bool   portrait: screenHeight >= screenWidth
     property var    remorse: null
-    property int    rerouteConsecutiveErrors: 0
-    property real   reroutePreviousTime: -1
-    property int    rerouteTotalCalls: 0
-    property bool   rerouting: false
     property var    rootPage: null
     // used to track current search and other operations with kept states (temp pois, for example)
     property string stateId
+    property string transportMode: {
+        if (app.mode === modes.followMe) return app.conf.followMeTransportMode;
+        if (app.mode === modes.exploreRoute || app.mode === modes.navigate || app.mode === modes.navigatePost)
+            return navigator.transportMode;
+        return "";
+    }
     property var    _stackMain: Stack {}
     property var    _stackNavigation: Stack {}
 
@@ -74,31 +95,43 @@ ApplicationWindowPL {
 
     Audio {
         id: sound
+        audioRole: Audio.NotificationRole
         autoLoad: true
         loops: 1
     }
 
-    Timer {
-        id: voicePromptRetry
-        interval: 500
-        running: false
-        repeat: false
-
-        property string message
-        property int tries
-
-        onMessageChanged: tries = 0
-        onTriggered: {
-            tries += 1;
-            app.playMaybe(message);
-        }
+    Connections {
+        target: app.navigator
+        onRouteChanged: app.narrativePageSeen = false
     }
 
     Connections {
-        target: app.conf
-        onMapMatchingWhenNavigatingChanged: app.updateMapMatching()
-        onMapMatchingWhenFollowingChanged: app.updateMapMatching()
-        onMapMatchingWhenIdleChanged: app.updateMapMatching()
+        target: Commander
+
+        onSearch: {
+            app.pushMain(Qt.resolvedUrl("GeocodePage.qml"),
+                         {"query": searchString});
+        }
+
+        onShowPoi: {
+            var radius = 50; // meters default radius
+            var p = pois.add({ "x": longitude, "y": latitude, "title": title });
+            if (!p) return;
+            pois.show(p);
+            py.call("poor.app.geocoder.reverse",
+                    [longitude, latitude, radius, 1],
+                    function(result) {
+                        if (!result || !result.length) return;
+                        var r = result[0];
+                        var rpoi = pois.convertFromPython(r);
+                        rpoi.poiId = p.poiId;
+                        rpoi.coordinate = QtPositioning.coordinate(rpoi.y, rpoi.x);
+                        if (title) rpoi.title = title;
+                        pois.update(rpoi);
+                    });
+            map.autoCenter = false;
+            map.setCenter(longitude, latitude);
+        }
     }
 
     Component.onDestruction: {
@@ -113,41 +146,22 @@ ApplicationWindowPL {
         py.call_sync("poor.app.quit", []);
     }
 
-    onHasMapMatchingChanged: updateMapMatching()
-
     onModeChanged: {
         if (!initialized) return;
         if (app.mode === modes.explore) {
 
         } else if (app.mode === modes.followMe) {
-
+            app.resetMenu();
         } else if (app.mode === modes.navigate) {
-            app.navigationStarted = true;
-            app.rerouteConsecutiveErrors = 0;
-            app.reroutePreviousTime = -1;
-            app.rerouteTotalCalls = 0;
+            app.resetMenu();
+        } else if (app.mode === modes.navigatePost) {
             app.resetMenu();
         }
-        app.updateMapMatching();
     }
 
     onNarrativePageSeenChanged: {
         if (!narrativePageSeen)
             app._stackNavigation.keep = false; // drops navigation pagestack if a new route is obtained
-    }
-
-    function clear(confirm) {
-        if (confirm) {
-            app.remorse.execute(app.tr("Clearing map"),
-                                function() {
-                                    app.clear();
-                                });
-            return;
-        }
-
-        // Remove all markers from the map.
-        pois.clear();
-        map.clearRoute();
     }
 
     function createObject(page, options, parent) {
@@ -181,6 +195,11 @@ ApplicationWindowPL {
         return "%1@%2.png".arg(name).arg(ratio);
     }
 
+    function getPosition() {
+        // Return the coordinates of the current position.
+        return [gps.coordinate.longitude, gps.coordinate.latitude];
+    }
+
     function hideMenu(menutext) {
         app._stackMain.keep = true;
         app._stackMain.setCurrent(app.pages.currentPage());
@@ -196,8 +215,9 @@ ApplicationWindowPL {
 
     function initialize() {
         initPages();
-        app.hasMapMatching = py.call_sync("poor.app.has_mapmatching", []);
         initialized = true;
+        // after all objects and pages are initialized
+        CmdLineParser.process()
     }
 
     function openMapErrorMessage(error) {
@@ -205,28 +225,12 @@ ApplicationWindowPL {
         app.push(Qt.resolvedUrl("MapErrorPage.qml"), { "lastError": error } )
     }
 
-    function playMaybe(message) {
-        // Play message via TTS engine if applicable.
-        if (!app.conf.voiceNavigation) return;
-        var fun = "poor.app.narrative.get_message_voice_uri";
-        py.call(fun, [message], function(uri) {
-            if (uri) {
-                sound.source = uri;
-                sound.play();
-            } else {
-                if (voicePromptRetry.message !== message)
-                    voicePromptRetry.message = message;
-                if (voicePromptRetry.tries < 10)
-                    voicePromptRetry.start();
-            }
-        });
+    function play(uri) {
+        sound.source = uri;
+        sound.play();
     }
 
-    function push(pagefile, options, clearAll) {
-        if (app.isConvergent && clearAll) {
-            app.resetMenu();
-            app.clearPages();
-        }
+    function push(pagefile, options) {
         return app.pages.push(pagefile, options);
     }
 
@@ -238,9 +242,6 @@ ApplicationWindowPL {
         // replace the current main with the new stack
         app._stackMain.clear();
         app.resetMenu();
-        if (app.isConvergent) {
-            app.clearPages();
-        }
         return app._stackMain.push(pagefile, options);
     }
 
@@ -249,84 +250,10 @@ ApplicationWindowPL {
         return app._stackMain.pushAttached(pagefile, options);
     }
 
-    function reroute() {
-        // Find a new route from the current position to the existing destination.
-        if (app.rerouting) return;
-        var notifyId = "app reroute";
-        app.notification.hold(app.tr("Rerouting"), notifyId);
-        app.playMaybe("std:rerouting");
-        app.rerouting = true;
-        // Note that rerouting does not allow us to relay params to the router,
-        // i.e. ones saved only temporarily as page.params in RoutePage.qml.
-        var args = [map.getPosition(), map.getDestination(), gps.direction];
-        py.call("poor.app.router.route", args, function(route) {
-            if (Array.isArray(route) && route.length > 0)
-                // If the router returns multiple alternative routes,
-                // always reroute using the first one.
-                route = route[0];
-            if (route && route.error && route.message) {
-                app.notification.flash(app.tr("Rerouting failed: %1").arg(route.message), notifyId);
-                app.playMaybe("std:rerouting failed");
-                app.rerouteConsecutiveErrors++;
-            } else if (route && route.x && route.x.length > 0) {
-                app.notification.flash(app.tr("New route found"), notifyId);
-                app.playMaybe("std:new route found");
-                map.addRoute(route, true);
-                map.addManeuvers(route.maneuvers);
-                app.rerouteConsecutiveErrors = 0;
-            } else {
-                app.notification.flash(app.tr("Rerouting failed"), notifyId);
-                app.playMaybe("std:rerouting failed");
-                app.rerouteConsecutiveErrors++;
-            }
-            app.reroutePreviousTime = Date.now();
-            app.rerouteTotalCalls++;
-            app.rerouting = false;
-        });
-    }
-
-    function rerouteMaybe() {
-        // Find a new route if conditions are met.
-        if (!app.conf.reroute) return;
-        if (app.mode !== modes.navigate) return;
-        if (!gps.position.horizontalAccuracyValid) return;
-        if (gps.position.horizontalAccuracy > 100) return;
-        if (!py.evaluate("poor.app.router.can_reroute")) return;
-        if (py.evaluate("poor.app.router.offline")) {
-            if (Date.now() - app.reroutePreviousTime < 5000) return;
-            return app.reroute();
-        } else {
-            // Limit the total amount and frequency of rerouting for online routers
-            // to avoid an excessive amount of API calls (causing data traffic and
-            // costs) in some special case where the router returns bogus results
-            // and the user is not able to manually intervene.
-            if (app.rerouteTotalCalls > 50) return;
-            var interval = 5000 * Math.pow(2, Math.min(4, app.rerouteConsecutiveErrors));
-            if (Date.now() - app.reroutePreviousTime < interval) return;
-            return app.reroute();
-        }
-    }
-
     function resetMenu() {
         app._stackMain.keep = false;
         app.stateId = "";
         app.infoPanel.infoText = "";
-    }
-
-    function setModeExplore() {
-        app.mode = modes.explore;
-    }
-
-    function setModeExploreRoute() {
-        app.mode = modes.exploreRoute;
-    }
-
-    function setModeFollowMe() {
-        app.mode = modes.followMe;
-    }
-
-    function setModeNavigate() {
-        app.mode = modes.navigate;
     }
 
     function showMap() {
@@ -374,24 +301,6 @@ ApplicationWindowPL {
         for (var i = 1; i < arguments.length; i++)
             message = message.arg(arguments[i]);
         return message;
-    }
-
-    function updateMapMatching() {
-        if (!hasMapMatching) mapMatchingMode = "none";
-        else if (app.mode === modes.navigate)
-            mapMatchingMode = (app.conf.mapMatchingWhenNavigating && map && map.route && map.route.mode ? map.route.mode : "none");
-        else if (app.mode === modes.followMe) mapMatchingMode = app.conf.mapMatchingWhenFollowing;
-        else mapMatchingMode = app.conf.mapMatchingWhenIdle;
-    }
-
-    function updateNavigationStatus(status) {
-        // Update navigation status with data from Python backend.
-        app.navigationStatus.update(status);
-        if (app.navigationStatus.voiceUri && app.conf.voiceNavigation) {
-            sound.source = app.navigationStatus.voiceUri;
-            sound.play();
-        }
-        app.navigationStatus.reroute && app.rerouteMaybe();
     }
 
 }

@@ -28,30 +28,48 @@ Item {
 
     height: visible ? mainRect.height + mainRect.anchors.topMargin : 0
     visible: !app.modalDialog && app.mode === modes.navigate
-    z: 910
+    z: 400
 
-    property string icon:      app.navigationStatus.icon
-    property string manDist:   app.navigationStatus.manDist
-    property string manTime:   app.navigationStatus.manTime
+    property string icon:      app.navigator.icon
+    property string manDist:   app.navigator.manDist
+    property string manTime:   app.navigator.manTime
     // difference in height between main and shields if the shield's
     // rectangle sticks out. zero otherwise
-    property real   marginExtraLeft: leftShield.visible ?
-                                         Math.max(leftShield.height + leftShield.anchors.topMargin -
-                                                  (mainRect.height + mainRect.anchors.topMargin), 0) : 0
-    property real   marginExtraLeftSide: leftShield.visible ? leftShield.width + leftShield.anchors.leftMargin : 0
+    property real   marginExtraLeft: {
+        var le = leftShield.visible ? Math.max(leftShield.height + leftShield.anchors.topMargin -
+                                               (mainRect.height + mainRect.anchors.topMargin), 0) : 0;
+        var ln = nextAfterNextShield.visible ? nextAfterNextShield.height +
+                                               nextAfterNextShield.anchors.topMargin : 0;
+        return le + ln;
+    }
+    property real   marginExtraLeftSide: {
+        var le = leftShield.visible ? leftShield.width + leftShield.anchors.leftMargin : 0;
+        var ln = nextAfterNextShield.visible ? nextAfterNextShield.width +
+                                               nextAfterNextShield.anchors.leftMargin : 0;
+        return Math.max(le, ln);
+    }
     property real   marginExtraRight: speedShield.visible ?
                                           Math.max(speedShield.height + speedShield.anchors.topMargin -
                                                    (mainRect.height + mainRect.anchors.topMargin), 0) : 0
     property real   marginExtraRightSide: speedShield.visible ? speedShield.width + speedShield.anchors.rightMargin : 0
-    property string narrative: app.navigationStatus.narrative
-    property bool   notify:    app.navigationStatus.notify
-    property var    street:    app.navigationStatus.street
+    property string narrative: app.navigator.narrative
+    property bool   nextAfterNextVisible: notify && nextIcon
+    property string nextIcon:  app.navigator.nextIcon
+    property string nextManDist:  app.navigator.nextManDist
+    property bool   notify:    app.navigator.notify
+    property int    roundaboutExit: app.navigator.roundaboutExit
+    property var    street:    app.navigator.street
+
+    // press feedback
+    property var    _colorBg: _pressed ? styler.blockPressed : styler.blockBg
+    property bool   _pressed: mainRectMouse.pressed || leftShieldMouse.pressed ||
+                              speedShieldMouse.pressed || nextAfterNextShieldMouse.pressed
 
     Rectangle {
         id: mainRect
         anchors.top: parent.top
         anchors.topMargin: -radius
-        color: styler.blockBg
+        color: _colorBg
         height: {
             if (!block.notify) return styler.themePaddingMedium + manLabel.height + radius;
             if (app.portrait) {
@@ -61,7 +79,7 @@ Item {
             }
             return styler.themePaddingMedium + streetLabel.height + narrativeLabel.height + radius;
         }
-        radius: width < parent.width ? styler.themePaddingLarge : 0
+        radius: width < parent.width ? styler.radius : 0
         width: {
             if (!app.portrait) {
                 var sp = speedShield.x - styler.themePaddingLarge*3;
@@ -89,6 +107,7 @@ Item {
         x: -radius
 
         MouseArea {
+            id: mainRectMouse
             anchors.fill: parent
             onClicked: block.openNavigation()
         }
@@ -100,14 +119,16 @@ Item {
         anchors.topMargin: -radius
         anchors.left: parent.left
         anchors.leftMargin: -radius
-        color: styler.blockBg
+        color: _colorBg
         height: manLabel.height + styler.themePaddingMedium +
                 iconImage.height + iconImage.anchors.topMargin + radius
-        radius: styler.themePaddingLarge
+        radius: styler.radius
         visible: !app.portrait &&  leftShield.height > mainRect.height && block.notify
         width: manLabel.anchors.leftMargin + styler.themePaddingLarge +
-               Math.max(manLabel.width, iconImage.width) + radius
+               contentWidth + radius
+        property int contentWidth: Math.max(manLabel.width, iconImage.width)
         MouseArea {
+            id: leftShieldMouse
             anchors.fill: parent
             onClicked: block.openNavigation()
         }
@@ -119,15 +140,36 @@ Item {
         anchors.topMargin: -radius
         anchors.right: block.right
         anchors.rightMargin: -radius
-        color: styler.blockBg
+        color: _colorBg
         height: speed.height + styler.themePaddingMedium + radius
-        radius: styler.themePaddingLarge
+        radius: styler.radius
         visible: speed.text && (speedShield.height > mainRect.height || mainRect.width < parent.width) ? true : false
         width: speed.width + styler.themePaddingLarge +
                speedUnit.width + styler.themePaddingSmall +
                styler.themeHorizontalPageMargin + radius
 
         MouseArea {
+            id: speedShieldMouse
+            anchors.fill: parent
+            onClicked: block.openNavigation()
+        }
+    }
+
+    Rectangle {
+        id: nextAfterNextShield
+        anchors.top: leftShield.visible ? leftShield.bottom : mainRect.bottom
+        anchors.topMargin:  -radius
+        anchors.left: parent.left
+        anchors.leftMargin: -radius
+        color: _colorBg
+        height: visible ? iconNextImage.height + nextManDistLabel.height + 2*radius : 0
+        radius: styler.radius
+        visible: nextAfterNextVisible
+        width: Math.max(iconNextImage.width, nextManDistLabel.width) +
+               styler.themeHorizontalPageMargin +
+               2*radius
+        MouseArea {
+            id: nextAfterNextShieldMouse
             anchors.fill: parent
             onClicked: block.openNavigation()
         }
@@ -137,7 +179,11 @@ Item {
         // Icon for the next maneuver
         id: iconImage
         anchors.left: parent.left
-        anchors.leftMargin: styler.themeHorizontalPageMargin
+        anchors.leftMargin: {
+            if (!app.portrait)
+                return styler.themeHorizontalPageMargin + (leftShield.contentWidth-width)/2;
+            return styler.themeHorizontalPageMargin;
+        }
         anchors.rightMargin: styler.themePaddingLarge
         anchors.top: parent.top
         anchors.topMargin: styler.themePaddingLarge
@@ -148,25 +194,17 @@ Item {
         source: block.notify ? "icons/navigation/%1-%2.svg".arg(block.icon || "flag").arg(styler.navigationIconsVariant) : ""
         sourceSize.height: (app.screenLarge ? 1.7 : 1) * styler.themeIconSizeLarge
         sourceSize.width: (app.screenLarge ? 1.7 : 1) * styler.themeIconSizeLarge
-        states: [
-            State {
-                when: !app.portrait && block.notify && iconImage.width < manLabel.width
-                AnchorChanges {
-                    target: iconImage
-                    anchors.left: undefined
-                    anchors.horizontalCenter: manLabel.horizontalCenter
-                }
-            },
-            State {
-                when: !app.portrait && block.notify
-                AnchorChanges {
-                    target: iconImage
-                    anchors.left: parent.left
-                    anchors.horizontalCenter: undefined
-                }
-            }
-        ]
         width: block.notify ? sourceSize.width : 0
+
+        LabelPL {
+            // roundabout exit if available
+            anchors.centerIn: parent
+            color: styler.themePrimaryColor
+            font.family: styler.themeFontFamily
+            font.pixelSize: parent.height / 4
+            text: roundaboutExit
+            visible: block.notify && roundaboutExit > 0
+        }
     }
 
     LabelPL {
@@ -175,7 +213,7 @@ Item {
         anchors.left: parent.left
         anchors.leftMargin: styler.themeHorizontalPageMargin
         anchors.baseline: manLabel.baseline
-        color: styler.themeSecondaryColor
+        color: _pressed ? styler.themeSecondaryHighlightColor : styler.themeSecondaryColor
         font.pixelSize: styler.themeFontSizeSmall
         text: app.tr("To route")
         visible: !block.notify
@@ -188,11 +226,12 @@ Item {
         anchors.left: iconImage.right
         anchors.leftMargin: {
             if (distToRoadLabel.visible) return styler.themePaddingSmall;
-            if (!app.portrait) return styler.themeHorizontalPageMargin;
+            if (!app.portrait)
+                return styler.themeHorizontalPageMargin + (leftShield.contentWidth-width)/2;
             return styler.themePaddingLarge;
         }
         anchors.top: parent.top
-        color: block.notify ? styler.themeHighlightColor : styler.themePrimaryColor
+        color: block.notify || _pressed ? styler.themeHighlightColor : styler.themePrimaryColor
         font.family: block.notify ? styler.themeFontFamilyHeading : styler.themeFontFamily
         font.pixelSize: block.notify ? styler.themeFontSizeHuge : styler.themeFontSizeLarge
         height: text ? implicitHeight + styler.themePaddingMedium : 0
@@ -226,7 +265,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: app.portrait ? styler.themeHorizontalPageMargin : styler.themePaddingLarge
         anchors.top: manLabel.bottom
-        color: styler.themePrimaryColor
+        color: _pressed ? styler.themeHighlightColor : styler.themePrimaryColor
         font.pixelSize: styler.themeFontSizeExtraLarge
         height: text ? implicitHeight + styler.themePaddingMedium : 0
         maximumLineCount: 1
@@ -249,15 +288,7 @@ Item {
         truncMode: truncModes.fade
         verticalAlignment: Text.AlignTop
 
-        property string streetName: {
-            if (!block.street) return "";
-            var s = "";
-            for (var i in block.street) {
-                if (s != "") s += "; "
-                s += block.street[i];
-            }
-            return s;
-        }
+        property string streetName: block.street ? block.street : ""
     }
 
     LabelPL {
@@ -269,7 +300,7 @@ Item {
         anchors.rightMargin: app.portrait ? styler.themeHorizontalPageMargin : styler.themePaddingLarge
         anchors.top: manLabel.bottom
         anchors.topMargin: styler.themePaddingSmall
-        color: styler.themePrimaryColor
+        color: _pressed ? styler.themeHighlightColor : styler.themePrimaryColor
         font.pixelSize: styler.themeFontSizeMedium
         height: text ? implicitHeight + styler.themePaddingMedium : 0
         states: [
@@ -295,26 +326,20 @@ Item {
         anchors.right: speedUnit.left
         anchors.rightMargin: styler.themePaddingSmall
         anchors.top: parent.top
-        color: styler.themePrimaryColor
+        color: _pressed ? styler.themeHighlightColor : styler.themePrimaryColor
         font.pixelSize: styler.themeFontSizeHuge
         height: implicitHeight + styler.themePaddingMedium
-        verticalAlignment: Text.AlignBottom
+        text: {
+            if (!gps.speedValid)
+                return "";
 
-        function update() {
-            // Update speed and positioning accuracy values in user's preferred units.
-            if (!gps.position.speedValid) {
-                text = ""
-                return;
-            }
-
-            if (app.conf.units === "american") {
-                text = "%1".arg(Math.round(gps.position.speed * 2.23694))
-            } else if (app.conf.units === "british") {
-                text = "%1".arg(Math.round(gps.position.speed * 2.23694))
-            } else {
-                text = "%1".arg(Math.round(gps.position.speed * 3.6))
-            }
+            if (app.conf.units === "american")
+                return "%1".arg(Math.round(gps.speed * 2.23694));
+            else if (app.conf.units === "british")
+                return "%1".arg(Math.round(gps.speed * 2.23694));
+            return "%1".arg(Math.round(gps.speed * 3.6)); // km/h
         }
+        verticalAlignment: Text.AlignBottom
     }
 
     LabelPL {
@@ -323,39 +348,48 @@ Item {
         anchors.baseline: speed.baseline
         anchors.right: parent.right
         anchors.rightMargin: styler.themeHorizontalPageMargin
-        color: styler.themeSecondaryColor
+        color: _pressed ? styler.themeSecondaryHighlightColor : styler.themeSecondaryColor
         font.pixelSize: styler.themeFontSizeMedium
-        visible: speed.text ? true : false
-
-        function update() {
-            if (app.conf.units === "american") {
-                text = app.tr("mph")
-            } else if (app.conf.units === "british") {
-                text = app.tr("mph")
-            } else {
-                text = app.tr("km/h")
-            }
+        text: {
+            if (app.conf.units === "american") return app.tr("mph");
+            else if (app.conf.units === "british") return app.tr("mph");
+            return app.tr("km/h")
         }
+        visible: speed.text ? true : false
     }
 
-    Connections {
-        target: app.conf
-        onUnitsChanged: block.update()
+    Image {
+        // Icon for the maneuver next after next
+        id: iconNextImage
+        x: (nextAfterNextShield.width + nextAfterNextShield.anchors.leftMargin)/2 - width/2
+        anchors.top: nextAfterNextShield.top
+        anchors.topMargin: -nextAfterNextShield.anchors.topMargin
+        fillMode: Image.Pad
+        height: visible ? sourceSize.height : 0
+        opacity: 0.9
+        smooth: true
+        source: visible ? "icons/navigation/%1-%2.svg".arg(block.nextIcon).arg(styler.navigationIconsVariant) : ""
+        sourceSize.height: (app.screenLarge ? 1.7 : 1) * styler.themeIconSizeLarge * 0.5
+        sourceSize.width: (app.screenLarge ? 1.7 : 1) * styler.themeIconSizeLarge * 0.5
+        visible: nextAfterNextVisible
+        width: visible ? sourceSize.width : 0
     }
 
-    Connections {
-        target: gps
-        onPositionChanged: speed.update()
+    LabelPL {
+        // Distance for the maneuver next after next
+        id: nextManDistLabel
+        anchors.horizontalCenter: iconNextImage.horizontalCenter
+        anchors.top: iconNextImage.bottom
+        color: block.notify || _pressed ? styler.themeHighlightColor : styler.themePrimaryColor
+        font.family: block.notify ? styler.themeFontFamilyHeading : styler.themeFontFamily
+        font.pixelSize: styler.themeFontSizeLarge
+        height: text ? implicitHeight + styler.themePaddingMedium : 0
+        text: block.nextManDist
+        verticalAlignment: Text.AlignBottom
+        visible: nextAfterNextVisible && text
     }
-
-    Component.onCompleted: block.update()
 
     function openNavigation() {
         if (visible) app.showNavigationPages()
-    }
-
-    function update() {
-        speed.update();
-        speedUnit.update();
     }
 }
